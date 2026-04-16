@@ -8,29 +8,26 @@ export default async function handler(req, res) {
   const { system, user } = req.body;
   if (!system || !user) return res.status(400).json({ error: 'Missing system or user' });
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-    const response = await fetch(url, {
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: system }] },
-        contents: [{ role: 'user', parts: [{ text: user }] }],
-        generationConfig: { maxOutputTokens: 2048, temperature: 0.7 }
+        model: 'deepseek-chat',
+        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+        max_tokens: 2048,
+        temperature: 0.7
       }),
     });
-
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: err?.error?.message || 'Gemini error' });
+      return res.status(response.status).json({ error: err?.error?.message || 'DeepSeek error' });
     }
-
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    return res.status(200).json({ result: text });
+    return res.status(200).json({ result: data.choices?.[0]?.message?.content || '' });
   } catch (e) {
     return res.status(500).json({ error: e.message || 'Internal error' });
   }
