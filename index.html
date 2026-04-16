@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>求职助手</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f3; --bg3: #eeece8;
+    --text: #1a1a1a; --text2: #6b6b6b; --text3: #a0a0a0;
+    --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.18);
+    --radius: 8px; --radius-lg: 12px;
+    --green-bg: #EAF3DE; --green-text: #27500A;
+    --amber-bg: #FAEEDA; --amber-text: #633806;
+    --red-bg: #FCEBEB; --red-text: #791F1F;
+    --blue-bg: #E6F1FB; --blue-text: #0C447C;
+    --gray-bg: #f0ede8; --gray-text: #5a5a5a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1c; --bg2: #252525; --bg3: #2e2e2e;
+      --text: #f0f0f0; --text2: #a0a0a0; --text3: #606060;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.18);
+      --green-bg: #1a2e10; --green-text: #9fd470;
+      --amber-bg: #2e1f08; --amber-text: #f0b060;
+      --red-bg: #2e1010; --red-text: #f08080;
+      --blue-bg: #0e1e30; --blue-text: #80b8f0;
+      --gray-bg: #2a2a2a; --gray-text: #a0a0a0;
+    }
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
+  .app { max-width: 980px; margin: 0 auto; padding: 2rem 1rem; }
+  .hdr { margin-bottom: 1.5rem; }
+  .hdr h1 { font-size: 22px; font-weight: 600; color: var(--text); }
+  .hdr p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .top-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .resume-bar { flex: 1; min-width: 260px; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); cursor: pointer; transition: background 0.15s; }
+  .resume-bar:hover { background: var(--bg2); }
+  .resume-bar.loaded { cursor: default; }
+  .resume-bar.loaded:hover { background: var(--bg); }
+  .resume-bar.drag { background: var(--bg2); }
+  .resume-lbl { font-size: 12px; color: var(--text2); white-space: nowrap; flex-shrink: 0; }
+  .resume-info { flex: 1; font-size: 13px; color: var(--text3); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .resume-info.loaded { color: var(--text); }
+  .key-bar { flex: 1; min-width: 260px; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); }
+  .key-bar label { font-size: 12px; color: var(--text2); white-space: nowrap; flex-shrink: 0; }
+  .key-bar input { flex: 1; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 5px 10px; font-size: 13px; color: var(--text); background: var(--bg2); min-width: 0; font-family: inherit; }
+  .key-bar input:focus { outline: none; border-color: var(--border2); }
+  .key-status { font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+  .tabs { display: flex; border-bottom: 0.5px solid var(--border); margin-bottom: 1.5rem; gap: 0; }
+  .tab { padding: 9px 20px; font-size: 14px; cursor: pointer; border: none; background: none; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: inherit; transition: color 0.15s; }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+  .tab:hover:not(.active) { color: var(--text); }
+  .tab-badge { display: inline-block; background: var(--bg2); color: var(--text2); font-size: 11px; padding: 1px 6px; border-radius: 10px; margin-left: 4px; font-weight: 400; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .field-label { font-size: 13px; color: var(--text2); margin-bottom: 6px; display: block; }
+  textarea { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 12px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--bg); resize: vertical; line-height: 1.6; transition: border-color 0.15s; }
+  textarea:focus { outline: none; border-color: var(--border2); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; font-size: 13px; font-weight: 500; border: 0.5px solid var(--border2); border-radius: var(--radius); cursor: pointer; background: var(--bg); color: var(--text); font-family: inherit; transition: background 0.15s; }
+  .btn:hover { background: var(--bg2); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn-primary:hover { opacity: 0.85; background: var(--text); }
+  .btn-sm { padding: 4px 12px; font-size: 12px; }
+  .btn-danger { border-color: #E24B4A; color: var(--red-text); }
+  .btn-danger:hover { background: var(--red-bg); }
+  .actions { display: flex; gap: 8px; margin-top: 1rem; flex-wrap: wrap; align-items: center; }
+  .rcard { background: var(--bg2); border-radius: var(--radius-lg); padding: 1.25rem; border: 0.5px solid var(--border); margin-top: 1rem; }
+  .score-row { display: flex; align-items: center; gap: 16px; margin-bottom: 1rem; }
+  .score-circ { width: 70px; height: 70px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 600; }
+  .score-num { font-size: 26px; line-height: 1; }
+  .score-lbl { font-size: 10px; margin-top: 2px; opacity: 0.8; }
+  .sec-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin: 1rem 0 0.4rem; }
+  .rbody { font-size: 14px; line-height: 1.85; color: var(--text); white-space: pre-wrap; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .bg-green { background: var(--green-bg); color: var(--green-text); }
+  .bg-amber { background: var(--amber-bg); color: var(--amber-text); }
+  .bg-red { background: var(--red-bg); color: var(--red-text); }
+  .bg-gray { background: var(--gray-bg); color: var(--gray-text); }
+  .progress { height: 5px; background: var(--border); border-radius: 3px; margin-top: 7px; overflow: hidden; width: 160px; }
+  .progress-bar { height: 100%; border-radius: 3px; }
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .hint { font-size: 13px; color: var(--text3); text-align: center; padding: 2.5rem; }
+  .opts-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 6px; }
+  .opts-row label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 13px; color: var(--text); }
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+  @media (max-width: 500px) { .stat-row { grid-template-columns: repeat(2, 1fr); } }
+  .stat-box { background: var(--bg); border-radius: var(--radius); padding: 12px 16px; border: 0.5px solid var(--border); }
+  .stat-num { font-size: 24px; font-weight: 600; color: var(--text); }
+  .stat-lbl { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .tbl-wrap { overflow-x: auto; }
+  table.tracker { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 720px; }
+  table.tracker th { text-align: left; padding: 8px 10px; font-weight: 500; font-size: 11px; color: var(--text2); border-bottom: 0.5px solid var(--border); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em; }
+  table.tracker td { padding: 9px 10px; border-bottom: 0.5px solid var(--border); vertical-align: middle; color: var(--text); }
+  table.tracker tr:last-child td { border-bottom: none; }
+  table.tracker tr:hover td { background: var(--bg2); }
+  select.inline { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 7px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; }
+  input.inline-date { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 7px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; width: 130px; }
+  input.inline-note { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 9px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; width: 150px; }
+  input[type=text].std { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 7px 10px; font-size: 13px; color: var(--text); background: var(--bg); font-family: inherit; }
+  input[type=text].std:focus { outline: none; border-color: var(--border2); }
+  select.std { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 7px 10px; font-size: 13px; color: var(--text); background: var(--bg); font-family: inherit; }
+  .two-opt { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; }
+  .two-opt > div { flex: 1; min-width: 180px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <h1>求职助手</h1>
+    <p>职位分析 · 简历优化 · 面试准备 · 投递追踪</p>
+  </div>
+
+  <div class="top-bar">
+    <div class="resume-bar" id="resume-bar" onclick="triggerUpload()" ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="dropResume(event)">
+      <span class="resume-lbl">简历</span>
+      <span class="resume-info" id="resume-info">未上传，点击或拖入文件（PDF / Word / TXT）</span>
+      <button class="btn btn-sm" id="resume-change-btn" style="display:none;flex-shrink:0" onclick="event.stopPropagation();triggerUpload()">更换</button>
+      <input type="file" id="resume-file" accept=".pdf,.docx,.txt" style="display:none" onchange="handleResumeFile(event)">
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('analyze')">职位分析</button>
+    <button class="tab" onclick="switchTab('resume')">简历优化</button>
+    <button class="tab" onclick="switchTab('interview')">面试准备</button>
+    <button class="tab" onclick="switchTab('email')">投递邮件</button>
+    <button class="tab" onclick="switchTab('tracker')">投递追踪 <span class="tab-badge" id="tracker-badge">0</span></button>
+  </div>
+
+  <!-- 职位分析 -->
+  <div id="panel-analyze" class="panel active">
+    <span class="field-label">职位描述（JD）</span>
+    <textarea id="jd-a" rows="13" placeholder="粘贴 JD，AI 会自动提取公司名、职位名及岗位偏向..."></textarea>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="analyzeJob()" id="btn-analyze"><span id="ico-analyze">分析匹配度</span></button>
+    </div>
+    <div id="result-analyze" style="display:none">
+      <div class="rcard" id="content-analyze"></div>
+      <div class="actions" style="margin-top:8px">
+        <button class="btn" id="btn-add-tracker" onclick="addToTracker()" style="display:none">+ 添加到投递追踪</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 简历优化 -->
+  <div id="panel-resume" class="panel">
+    <span class="field-label">目标 JD</span>
+    <textarea id="jd-r" rows="12" placeholder="粘贴目标岗位 JD..."></textarea>
+    <div style="margin-top:0.75rem">
+      <span class="field-label">优化侧重</span>
+      <div class="opts-row">
+        <label><input type="checkbox" id="opt-kw" checked> 关键词匹配</label>
+        <label><input type="checkbox" id="opt-qt"> 量化成果</label>
+        <label><input type="checkbox" id="opt-st"> 结构优化</label>
+        <label><input type="checkbox" id="opt-tn"> 措辞润色</label>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="optimizeResume()" id="btn-resume"><span id="ico-resume">优化简历</span></button>
+    </div>
+    <div id="result-resume" style="display:none"><div class="rcard" id="content-resume"></div></div>
+  </div>
+
+  <!-- 面试准备 -->
+  <div id="panel-interview" class="panel">
+    <span class="field-label">目标 JD</span>
+    <textarea id="jd-i" rows="12" placeholder="粘贴 JD..."></textarea>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="genInterview()" id="btn-interview"><span id="ico-interview">生成面试题</span></button>
+    </div>
+    <div id="result-interview" style="display:none"><div class="rcard" id="content-interview"></div></div>
+  </div>
+
+  <!-- 投递邮件 -->
+  <div id="panel-email" class="panel">
+    <span class="field-label">目标 JD</span>
+    <textarea id="jd-e" rows="10" placeholder="粘贴 JD..."></textarea>
+    <div class="two-opt">
+      <div>
+        <span class="field-label">称呼（可选）</span>
+        <input type="text" class="std" id="email-to" placeholder="如：HR 您好 / 张总好">
+      </div>
+      <div>
+        <span class="field-label">邮件风格</span>
+        <select class="std" id="email-style">
+          <option value="professional">正式专业</option>
+          <option value="warm">温和亲切</option>
+          <option value="concise">简洁直接</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="genEmail()" id="btn-email"><span id="ico-email">生成投递邮件</span></button>
+    </div>
+    <div id="result-email" style="display:none"><div class="rcard" id="content-email"></div></div>
+  </div>
+
+  <!-- 投递追踪 -->
+  <div id="panel-tracker" class="panel">
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-num" id="st-total">0</div><div class="stat-lbl">已分析</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-applied">0</div><div class="stat-lbl">已投递</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-fb">0</div><div class="stat-lbl">收到反馈</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-rate">—</div><div class="stat-lbl">反馈率</div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px">
+      <span style="font-size:13px;color:var(--text2)" id="tracker-info"></span>
+      <button class="btn btn-sm" onclick="exportCSV()">导出 CSV</button>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tracker">
+        <thead><tr>
+          <th>#</th><th>公司</th><th>职位</th><th>类型</th><th>匹配分</th><th>结论</th>
+          <th>分析时间</th><th>是否投递</th><th>投递时间</th><th>反馈状态</th><th>备注</th><th></th>
+        </tr></thead>
+        <tbody id="tracker-body"></tbody>
+      </table>
+    </div>
+    <div id="tracker-empty" class="hint">暂无记录，分析职位后点击"添加到投递追踪"</div>
+  </div>
+</div>
+
+<script>
+const TRACKER_KEY='job_tracker_v1', RESUME_KEY='job_resume_v1', RESUME_NAME_KEY='job_resume_name_v1';
+let resumeText='', lastAnalysis=null, trackerData=[];
+try { trackerData=JSON.parse(localStorage.getItem(TRACKER_KEY)||'[]'); } catch(e) {}
+
+function init() {
+  const r=localStorage.getItem(RESUME_KEY), n=localStorage.getItem(RESUME_NAME_KEY);
+  if (r && r.length>10) { resumeText=r; setResumeLoaded(n||'简历已加载'); }
+  updateBadge();
+}
+
+function triggerUpload() { document.getElementById('resume-file').click(); }
+function dragOver(e) { e.preventDefault(); document.getElementById('resume-bar').classList.add('drag'); }
+function dragLeave() { document.getElementById('resume-bar').classList.remove('drag'); }
+function dropResume(e) { e.preventDefault(); dragLeave(); const f=e.dataTransfer.files[0]; if(f) processResume(f); }
+function handleResumeFile(e) { const f=e.target.files[0]; if(f) processResume(f); }
+
+async function processResume(file) {
+  const info=document.getElementById('resume-info');
+  info.className='resume-info'; info.textContent='解析中...';
+  try {
+    let text='';
+    if (file.name.endsWith('.txt')) text=await file.text();
+    else if (file.name.endsWith('.docx')) {
+      const r=await mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()});
+      text=r.value;
+    } else if (file.name.endsWith('.pdf')) {
+      text=await readPdf(file);
+    }
+    if (!text || text.length<50) { setResumeError('内容太少，请用 TXT 或 DOCX 格式'); return; }
+    resumeText=text;
+    localStorage.setItem(RESUME_KEY, text);
+    localStorage.setItem(RESUME_NAME_KEY, file.name);
+    setResumeLoaded(file.name+' · '+Math.round(text.length/100)/10+'k 字符');
+  } catch(e) { setResumeError('解析失败，请用 TXT 或 DOCX 格式'); }
+}
+
+function setResumeLoaded(name) {
+  const el=document.getElementById('resume-info');
+  el.className='resume-info loaded'; el.textContent=name;
+  document.getElementById('resume-change-btn').style.display='inline-flex';
+  const bar=document.getElementById('resume-bar');
+  bar.classList.add('loaded'); bar.onclick=null;
+}
+function setResumeError(msg) {
+  const el=document.getElementById('resume-info');
+  el.className='resume-info'; el.style.color='var(--red-text)'; el.textContent=msg;
+}
+
+async function readPdf(file) {
+  return new Promise(resolve => {
+    const r=new FileReader();
+    r.onload=e => {
+      let t=''; const raw=e.target.result;
+      for (let i=0;i<raw.length;i++) {
+        const c=raw.charCodeAt(i);
+        if ((c>=32&&c<=126)||(c>=0x4e00&&c<=0x9fff)||c===10) t+=raw[i];
+      }
+      resolve(t.length>100 ? t : '请改用 TXT 或 DOCX 格式上传');
+    };
+    r.readAsBinaryString(file);
+  });
+}
+
+async function callAPI(system, user) {
+  const res=await fetch('/api/chat', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({system, user})
+  });
+  if (!res.ok) {
+    const err=await res.json().catch(()=>({}));
+    throw new Error(err?.error || 'HTTP '+res.status);
+  }
+  const data=await res.json();
+  return data.result || '';
+}
+
+function checkReady() {
+  if (!resumeText) { alert('请先上传简历'); return false; }
+  return true;
+}
+function setLoading(b, i, on, label) {
+  document.getElementById(b).disabled=on;
+  document.getElementById(i).innerHTML=on ? '<span class="spinner"></span> 处理中...' : label;
+}
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['analyze','resume','interview','email','tracker'][i]===t));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+  if (t==='tracker') renderTracker();
+  if (t==='interview' && !document.getElementById('jd-i').value) document.getElementById('jd-i').value=document.getElementById('jd-a').value||'';
+  if (t==='email' && !document.getElementById('jd-e').value) document.getElementById('jd-e').value=document.getElementById('jd-a').value||'';
+}
+
+async function analyzeJob() {
+  if (!checkReady()) return;
+  const jd=document.getElementById('jd-a').value.trim();
+  if (!jd) { alert('请填写 JD'); return; }
+  setLoading('btn-analyze','ico-analyze',true);
+  document.getElementById('result-analyze').style.display='block';
+  document.getElementById('btn-add-tracker').style.display='none';
+  const content=document.getElementById('content-analyze');
+  content.innerHTML='<div class="hint">AI 分析中...</div>';
+  const sys=`你是资深职业顾问，专注 AE/AM/PM 岗位。严格按以下格式输出，不要增减字段：
+
+【公司名】（从JD提取，无则写"未知"）
+【职位名】（从JD提取）
+【岗位偏向】销售型 / 运营型 / 产品型 / 客户成功型（四选一）
+【总体评分】数字/100
+【推荐结论】投递 / 谨慎投递 / 不建议投递（三选一）
+【一句话理由】15字以内
+
+【匹配优势】
+- 优势1
+- 优势2
+- 优势3
+
+【主要差距】
+- 差距1
+- 差距2
+
+【投递建议】
+100字以内具体建议`;
+  try {
+    const result=await callAPI(sys, `我的简历：\n${resumeText}\n\n目标JD：\n${jd}`);
+    lastAnalysis={full:result, jd};
+    renderAnalysis(result, content);
+    document.getElementById('btn-add-tracker').style.display='inline-flex';
+  } catch(e) { content.innerHTML=`<div style="font-size:13px;color:var(--red-text)">请求失败：${e.message}</div>`; }
+  setLoading('btn-analyze','ico-analyze',false,'重新分析');
+}
+
+function renderAnalysis(text, container) {
+  const g=pat => { const m=text.match(pat); return m?m[1].trim():''; };
+  const company=g(/【公司名】(.+)/), role=g(/【职位名】(.+)/), orient=g(/【岗位偏向】(.+)/);
+  const score=parseInt(g(/【总体评分】(\d+)/))||null;
+  const verdict=g(/【推荐结论】(.+)/), reason=g(/【一句话理由】(.+)/);
+  const sc=score>=70?'var(--green-text)':score>=50?'var(--amber-text)':'var(--red-text)';
+  const sbg=score>=70?'var(--green-bg)':score>=50?'var(--amber-bg)':'var(--red-bg)';
+  const vb=verdict==='投递'?'bg-green':verdict==='谨慎投递'?'bg-amber':'bg-red';
+  let html='';
+  if (score) {
+    html+=`<div class="score-row">
+      <div class="score-circ" style="background:${sbg};color:${sc}">
+        <span class="score-num">${score}</span><span class="score-lbl">匹配分</span>
+      </div>
+      <div>
+        <div style="font-size:14px;font-weight:500;margin-bottom:6px">${company} · ${role}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+          <span class="badge ${vb}">${verdict}</span>
+          <span class="badge bg-gray">${orient}</span>
+        </div>
+        <div style="font-size:13px;color:var(--text2)">${reason}</div>
+        <div class="progress"><div class="progress-bar" style="width:${score}%;background:${sc}"></div></div>
+      </div>
+    </div>`;
+  }
+  for (const [k,l] of [['匹配优势','匹配优势'],['主要差距','主要差距'],['投递建议','投递建议']]) {
+    const m=text.match(new RegExp(`【${k}】([\\s\\S]*?)(?=【|$)`));
+    if (m) html+=`<div class="sec-title">${l}</div><div class="rbody">${m[1].trim()}</div>`;
+  }
+  container.innerHTML=html||`<div class="rbody">${text}</div>`;
+}
+
+function addToTracker() {
+  if (!lastAnalysis) return;
+  const t=lastAnalysis.full;
+  const g=pat => { const m=t.match(pat); return m?m[1].trim():''; };
+  trackerData.unshift({
+    id: Date.now(),
+    company: g(/【公司名】(.+)/)||'未知',
+    role: g(/【职位名】(.+)/)||'未知',
+    orient: g(/【岗位偏向】(.+)/)||'—',
+    score: parseInt(g(/【总体评分】(\d+)/))||0,
+    verdict: g(/【推荐结论】(.+)/),
+    analyzedAt: new Date().toLocaleDateString('zh-CN'),
+    applied: false, appliedAt: '', feedback: '待定', note: ''
+  });
+  saveTracker(); updateBadge();
+  alert('已添加到投递追踪！');
+}
+
+async function optimizeResume() {
+  if (!checkReady()) return;
+  const jd=document.getElementById('jd-r').value.trim();
+  if (!jd) { alert('请填写 JD'); return; }
+  const opts=[];
+  if (document.getElementById('opt-kw').checked) opts.push('关键词匹配');
+  if (document.getElementById('opt-qt').checked) opts.push('量化成果');
+  if (document.getElementById('opt-st').checked) opts.push('结构优化');
+  if (document.getElementById('opt-tn').checked) opts.push('措辞润色');
+  setLoading('btn-resume','ico-resume',true);
+  document.getElementById('result-resume').style.display='block';
+  const content=document.getElementById('content-resume');
+  content.innerHTML='<div class="hint">AI 优化中...</div>';
+  const sys=`你是资深简历顾问，优化侧重：${opts.join('、')||'综合'}。格式：\n【优化说明】\n（3条以内）\n\n【优化后简历】\n（完整简历）\n\n【修改亮点】\n（3-5处关键改动）`;
+  try {
+    const result=await callAPI(sys, `简历：\n${resumeText}\n\nJD：\n${jd}`);
+    renderSections(result, content, [['优化说明','优化说明'],['优化后简历','优化后简历'],['修改亮点','修改亮点']], true);
+  } catch(e) { content.innerHTML=`<div style="font-size:13px;color:var(--red-text)">请求失败：${e.message}</div>`; }
+  setLoading('btn-resume','ico-resume',false,'重新优化');
+}
+
+async function genInterview() {
+  if (!checkReady()) return;
+  const jd=document.getElementById('jd-i').value.trim();
+  if (!jd) { alert('请填写 JD'); return; }
+  setLoading('btn-interview','ico-interview',true);
+  document.getElementById('result-interview').style.display='block';
+  const content=document.getElementById('content-interview');
+  content.innerHTML='<div class="hint">AI 生成中...</div>';
+  const sys=`你是面试教练，专注 AE/AM/PM 岗位。格式：
+
+【岗位关键能力】
+（3-4条）
+
+【高频行为问题】
+Q1: 问题
+STAR提示: 建议从哪个经历切入
+
+Q2: 问题
+STAR提示: ...
+
+Q3: 问题
+STAR提示: ...
+
+【专业问题】
+Q1: 问题（附参考答案方向）
+Q2: 问题
+Q3: 问题
+
+【反问面试官】
+- 3条建议`;
+  try {
+    const result=await callAPI(sys, `简历：\n${resumeText}\n\nJD：\n${jd}`);
+    renderSections(result, content, [['岗位关键能力','关键能力'],['高频行为问题','高频行为题'],['专业问题','专业问题'],['反问面试官','反问建议']], false);
+  } catch(e) { content.innerHTML=`<div style="font-size:13px;color:var(--red-text)">请求失败：${e.message}</div>`; }
+  setLoading('btn-interview','ico-interview',false,'重新生成');
+}
+
+async function genEmail() {
+  if (!checkReady()) return;
+  const jd=document.getElementById('jd-e').value.trim();
+  if (!jd) { alert('请填写 JD'); return; }
+  const style=document.getElementById('email-style').value;
+  const to=document.getElementById('email-to').value.trim();
+  setLoading('btn-email','ico-email',true);
+  document.getElementById('result-email').style.display='block';
+  const content=document.getElementById('content-email');
+  content.innerHTML='<div class="hint">AI 生成中...</div>';
+  const styleMap={professional:'正式专业',warm:'温和亲切',concise:'简洁直接'};
+  const sys=`你是求职顾问。风格：${styleMap[style]}。格式：\n\n【邮件主题】\n（一行）\n\n【邮件正文】\n（完整邮件，${to?'称呼用'+to+'，':''}突出与JD最相关的2-3个亮点，不超过250字）\n\n【发送建议】\n（2条）`;
+  try {
+    const result=await callAPI(sys, `简历：\n${resumeText}\n\nJD：\n${jd}`);
+    renderEmail(result, content);
+  } catch(e) { content.innerHTML=`<div style="font-size:13px;color:var(--red-text)">请求失败：${e.message}</div>`; }
+  setLoading('btn-email','ico-email',false,'重新生成');
+}
+
+function renderSections(text, container, sections, hasResumeCopy) {
+  let html='';
+  for (const [k,l] of sections) {
+    const m=text.match(new RegExp(`【${k}】([\\s\\S]*?)(?=【|$)`));
+    if (m) {
+      html+=`<div class="sec-title">${l}</div>`;
+      if (k==='优化后简历' && hasResumeCopy) {
+        html+=`<div class="rbody" style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px">${m[1].trim()}</div>`;
+        html+=`<button class="btn btn-sm" onclick="copyTxt(this,${JSON.stringify(m[1].trim())})">复制简历</button>`;
+      } else {
+        html+=`<div class="rbody">${m[1].trim()}</div>`;
+      }
+    }
+  }
+  container.innerHTML=html||`<div class="rbody">${text}</div>`;
+}
+
+function renderEmail(text, container) {
+  const subj=text.match(/【邮件主题】([\s\S]*?)(?=【|$)/)?.[1]?.trim()||'';
+  const body=text.match(/【邮件正文】([\s\S]*?)(?=【|$)/)?.[1]?.trim()||'';
+  const tip=text.match(/【发送建议】([\s\S]*?)(?=【|$)/)?.[1]?.trim()||'';
+  let html='';
+  if (subj) html+=`<div class="sec-title">邮件主题</div><div style="font-size:14px;font-weight:500;padding:8px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:6px">${subj}</div>`;
+  if (body) {
+    html+=`<div class="sec-title">邮件正文</div><div class="rbody" style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px">${body}</div>`;
+    html+=`<button class="btn btn-sm" onclick="copyTxt(this,${JSON.stringify(body)})" style="margin-bottom:8px">复制正文</button>`;
+  }
+  if (tip) html+=`<div class="sec-title">发送建议</div><div class="rbody">${tip}</div>`;
+  container.innerHTML=html||`<div class="rbody">${text}</div>`;
+}
+
+function copyTxt(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const o=btn.textContent; btn.textContent='已复制';
+    setTimeout(()=>btn.textContent=o, 2000);
+  });
+}
+
+function renderTracker() {
+  const body=document.getElementById('tracker-body');
+  const total=trackerData.length;
+  const applied=trackerData.filter(d=>d.applied).length;
+  const fb=trackerData.filter(d=>d.feedback!=='待定'&&d.feedback!=='').length;
+  document.getElementById('st-total').textContent=total;
+  document.getElementById('st-applied').textContent=applied;
+  document.getElementById('st-fb').textContent=fb;
+  document.getElementById('st-rate').textContent=applied?Math.round(fb/applied*100)+'%':'—';
+  document.getElementById('tracker-info').textContent=total?`共 ${total} 条记录`:'';
+  if (!total) { body.innerHTML=''; document.getElementById('tracker-empty').style.display='block'; return; }
+  document.getElementById('tracker-empty').style.display='none';
+  body.innerHTML=trackerData.map((d,i) => {
+    const sc=d.score>=70?'var(--green-text)':d.score>=50?'var(--amber-text)':'var(--red-text)';
+    const sbg=d.score>=70?'var(--green-bg)':d.score>=50?'var(--amber-bg)':'var(--red-bg)';
+    const vb=d.verdict==='投递'?'bg-green':d.verdict==='谨慎投递'?'bg-amber':'bg-red';
+    return `<tr>
+      <td style="color:var(--text2);font-size:12px">${total-i}</td>
+      <td style="font-weight:500">${d.company}</td>
+      <td>${d.role}</td>
+      <td><span class="badge bg-gray">${d.orient}</span></td>
+      <td><span style="background:${sbg};color:${sc};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500">${d.score}</span></td>
+      <td><span class="badge ${vb}">${d.verdict}</span></td>
+      <td style="color:var(--text2);font-size:12px">${d.analyzedAt}</td>
+      <td><select class="inline" onchange="updateField(${d.id},'applied',this.value==='true')">
+        <option value="false" ${!d.applied?'selected':''}>未投递</option>
+        <option value="true" ${d.applied?'selected':''}>已投递</option>
+      </select></td>
+      <td><input class="inline-date" type="date" value="${d.appliedAt}" onchange="updateField(${d.id},'appliedAt',this.value)"></td>
+      <td><select class="inline" onchange="updateField(${d.id},'feedback',this.value)">
+        <option value="待定" ${d.feedback==='待定'?'selected':''}>待定</option>
+        <option value="已查看" ${d.feedback==='已查看'?'selected':''}>已查看</option>
+        <option value="已笔试" ${d.feedback==='已笔试'?'selected':''}>已笔试</option>
+        <option value="已面试" ${d.feedback==='已面试'?'selected':''}>已面试</option>
+        <option value="已offer" ${d.feedback==='已offer'?'selected':''}>已offer</option>
+        <option value="已拒绝" ${d.feedback==='已拒绝'?'selected':''}>已拒绝</option>
+        <option value="已撤回" ${d.feedback==='已撤回'?'selected':''}>已撤回</option>
+      </select></td>
+      <td><input class="inline-note" type="text" value="${d.note}" placeholder="备注..." onchange="updateField(${d.id},'note',this.value)"></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteEntry(${d.id})">删除</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateField(id, field, value) {
+  const e=trackerData.find(d=>d.id===id);
+  if (e) { e[field]=value; saveTracker(); }
+  const applied=trackerData.filter(d=>d.applied).length;
+  const fb=trackerData.filter(d=>d.feedback!=='待定'&&d.feedback!=='').length;
+  document.getElementById('st-applied').textContent=applied;
+  document.getElementById('st-fb').textContent=fb;
+  document.getElementById('st-rate').textContent=applied?Math.round(fb/applied*100)+'%':'—';
+}
+
+function deleteEntry(id) {
+  if (!confirm('确认删除？')) return;
+  trackerData=trackerData.filter(d=>d.id!==id);
+  saveTracker(); updateBadge(); renderTracker();
+}
+
+function saveTracker() { try { localStorage.setItem(TRACKER_KEY, JSON.stringify(trackerData)); } catch(e) {} }
+function updateBadge() { document.getElementById('tracker-badge').textContent=trackerData.length; }
+
+function exportCSV() {
+  if (!trackerData.length) { alert('暂无数据'); return; }
+  const h=['公司','职位','岗位偏向','匹配分','结论','分析时间','是否投递','投递时间','反馈状态','备注'];
+  const rows=trackerData.map(d=>[d.company,d.role,d.orient,d.score,d.verdict,d.analyzedAt,d.applied?'是':'否',d.appliedAt,d.feedback,d.note].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+h.join(',')+'\n'+rows.join('\n')], {type:'text/csv;charset=utf-8'}));
+  a.download='求职追踪.csv'; a.click();
+}
+
+init();
+</script>
+</body>
+</html>
