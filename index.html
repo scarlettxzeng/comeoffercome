@@ -92,6 +92,11 @@
   .stat-box { background: var(--bg); border-radius: var(--radius); padding: 12px 16px; border: 0.5px solid var(--border); }
   .stat-num { font-size: 24px; font-weight: 600; color: var(--text); }
   .stat-lbl { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .filter-bar { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; padding: 10px 12px; background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 0.75rem; }
+  .filter-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .filter-lbl { font-size: 12px; color: var(--text2); margin-right: 2px; }
+  .filter-btn { border: 0.5px solid var(--border); border-radius: 20px; padding: 4px 10px; background: var(--bg2); color: var(--text2); font-size: 12px; font-family: inherit; cursor: pointer; }
+  .filter-btn.active { background: var(--text); border-color: var(--text); color: var(--bg); }
   .tbl-wrap { overflow-x: auto; }
   table.tracker { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 720px; }
   table.tracker th { text-align: left; padding: 8px 10px; font-weight: 500; font-size: 11px; color: var(--text2); border-bottom: 0.5px solid var(--border); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -129,7 +134,6 @@
     <button class="tab active" onclick="switchTab('analyze')">职位分析</button>
     <button class="tab" onclick="switchTab('resume')">简历优化</button>
     <button class="tab" onclick="switchTab('interview')">面试准备</button>
-    <button class="tab" onclick="switchTab('email')">投递邮件</button>
     <button class="tab" onclick="switchTab('tracker')">投递追踪 <span class="tab-badge" id="tracker-badge">0</span></button>
   </div>
 
@@ -183,30 +187,6 @@
     <div id="result-interview" style="display:none"><div class="rcard" id="content-interview"></div></div>
   </div>
 
-  <!-- 投递邮件 -->
-  <div id="panel-email" class="panel">
-    <span class="field-label">目标 JD</span>
-    <textarea id="jd-e" rows="10" placeholder="粘贴 JD..."></textarea>
-    <div class="two-opt">
-      <div>
-        <span class="field-label">称呼（可选）</span>
-        <input type="text" class="std" id="email-to" placeholder="如：HR 您好 / 张总好">
-      </div>
-      <div>
-        <span class="field-label">邮件风格</span>
-        <select class="std" id="email-style">
-          <option value="professional">正式专业</option>
-          <option value="warm">温和亲切</option>
-          <option value="concise">简洁直接</option>
-        </select>
-      </div>
-    </div>
-    <div class="actions">
-      <button class="btn btn-primary" onclick="genEmail()" id="btn-email"><span id="ico-email">生成投递邮件</span></button>
-    </div>
-    <div id="result-email" style="display:none"><div class="rcard" id="content-email"></div></div>
-  </div>
-
   <!-- 投递追踪 -->
   <div id="panel-tracker" class="panel">
     <div class="stat-row">
@@ -218,6 +198,22 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px">
       <span style="font-size:13px;color:var(--text2)" id="tracker-info"></span>
       <button class="btn btn-sm" onclick="exportCSV()">导出 CSV</button>
+    </div>
+    <div class="filter-bar">
+      <div class="filter-group" id="applied-filter">
+        <span class="filter-lbl">投递状态</span>
+        <button class="filter-btn active" data-filter-type="applied" data-filter-value="all" onclick="setTrackerFilter('applied','all',this)">全部</button>
+        <button class="filter-btn" data-filter-type="applied" data-filter-value="false" onclick="setTrackerFilter('applied','false',this)">未投递</button>
+        <button class="filter-btn" data-filter-type="applied" data-filter-value="true" onclick="setTrackerFilter('applied','true',this)">已投递</button>
+      </div>
+      <div class="filter-group" id="feedback-filter">
+        <span class="filter-lbl">反馈状态</span>
+        <button class="filter-btn active" data-filter-type="feedback" data-filter-value="all" onclick="setTrackerFilter('feedback','all',this)">全部</button>
+        <button class="filter-btn" data-filter-type="feedback" data-filter-value="待定" onclick="setTrackerFilter('feedback','待定',this)">待定</button>
+        <button class="filter-btn" data-filter-type="feedback" data-filter-value="已面试" onclick="setTrackerFilter('feedback','已面试',this)">已面试</button>
+        <button class="filter-btn" data-filter-type="feedback" data-filter-value="已offer" onclick="setTrackerFilter('feedback','已offer',this)">已offer</button>
+        <button class="filter-btn" data-filter-type="feedback" data-filter-value="已拒绝" onclick="setTrackerFilter('feedback','已拒绝',this)">已拒绝</button>
+      </div>
     </div>
     <div class="tbl-wrap">
       <table class="tracker">
@@ -244,6 +240,7 @@
 <script>
 const TRACKER_KEY='job_tracker_v1', RESUME_KEY='job_resume_v1', RESUME_NAME_KEY='job_resume_name_v1';
 let resumeText='', lastAnalysis=null, trackerData=[];
+const trackerFilters={applied:'all', feedback:'all'};
 try { trackerData=JSON.parse(localStorage.getItem(TRACKER_KEY)||'[]'); } catch(e) {}
 
 function init() {
@@ -328,12 +325,11 @@ function setLoading(b, i, on, label) {
   document.getElementById(i).innerHTML=on ? '<span class="spinner"></span> 处理中...' : label;
 }
 function switchTab(t) {
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['analyze','resume','interview','email','tracker'][i]===t));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['analyze','resume','interview','tracker'][i]===t));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+t).classList.add('active');
   if (t==='tracker') renderTracker();
   if (t==='interview' && !document.getElementById('jd-i').value) document.getElementById('jd-i').value=document.getElementById('jd-a').value||'';
-  if (t==='email' && !document.getElementById('jd-e').value) document.getElementById('jd-e').value=document.getElementById('jd-a').value||'';
 }
 
 async function analyzeJob() {
@@ -353,6 +349,18 @@ async function analyzeJob() {
 【总体评分】数字/100
 【推荐结论】投递 / 谨慎投递 / 不建议投递（三选一）
 【一句话理由】15字以内
+
+【公司背景】
+行业：xxx
+主营业务：xxx
+规模/员工数：xxx（从JD推断，不确定写"未知"）
+国家/背景：xxx
+
+【岗位亮点】
+- 薪资/OTE：xxx（有则提取，无则写"未提及"）
+- 成长空间：xxx
+- 团队规模：xxx（有则提取）
+- 其他亮点：xxx
 
 【匹配优势】
 - 优势1
@@ -398,6 +406,10 @@ function renderAnalysis(text, container) {
         <div class="progress"><div class="progress-bar" style="width:${score}%;background:${sc}"></div></div>
       </div>
     </div>`;
+  }
+  for (const [k,l] of [['公司背景','公司背景'],['岗位亮点','岗位亮点']]) {
+    const m=text.match(new RegExp(`【${k}】([\\s\\S]*?)(?=【|$)`));
+    if (m) html+=`<div class="sec-title">${l}</div><div class="rbody">${m[1].trim()}</div>`;
   }
   for (const [k,l] of [['匹配优势','匹配优势'],['主要差距','主要差距'],['投递建议','投递建议']]) {
     const m=text.match(new RegExp(`【${k}】([\\s\\S]*?)(?=【|$)`));
@@ -485,25 +497,6 @@ Q3: 问题
   setLoading('btn-interview','ico-interview',false,'重新生成');
 }
 
-async function genEmail() {
-  if (!checkReady()) return;
-  const jd=document.getElementById('jd-e').value.trim();
-  if (!jd) { alert('请填写 JD'); return; }
-  const style=document.getElementById('email-style').value;
-  const to=document.getElementById('email-to').value.trim();
-  setLoading('btn-email','ico-email',true);
-  document.getElementById('result-email').style.display='block';
-  const content=document.getElementById('content-email');
-  content.innerHTML='<div class="hint">AI 生成中...</div>';
-  const styleMap={professional:'正式专业',warm:'温和亲切',concise:'简洁直接'};
-  const sys=`你是求职顾问。风格：${styleMap[style]}。格式：\n\n【邮件主题】\n（一行）\n\n【邮件正文】\n（完整邮件，${to?'称呼用'+to+'，':''}突出与JD最相关的2-3个亮点，不超过250字）\n\n【发送建议】\n（2条）`;
-  try {
-    const result=await callAPI(sys, `简历：\n${resumeText}\n\nJD：\n${jd}`);
-    renderEmail(result, content);
-  } catch(e) { content.innerHTML=`<div style="font-size:13px;color:var(--red-text)">请求失败：${e.message}</div>`; }
-  setLoading('btn-email','ico-email',false,'重新生成');
-}
-
 function renderSections(text, container, sections, hasResumeCopy) {
   let html='';
   for (const [k,l] of sections) {
@@ -521,20 +514,6 @@ function renderSections(text, container, sections, hasResumeCopy) {
   container.innerHTML=html||`<div class="rbody">${text}</div>`;
 }
 
-function renderEmail(text, container) {
-  const subj=text.match(/【邮件主题】([\s\S]*?)(?=【|$)/)?.[1]?.trim()||'';
-  const body=text.match(/【邮件正文】([\s\S]*?)(?=【|$)/)?.[1]?.trim()||'';
-  const tip=text.match(/【发送建议】([\s\S]*?)(?=【|$)/)?.[1]?.trim()||'';
-  let html='';
-  if (subj) html+=`<div class="sec-title">邮件主题</div><div style="font-size:14px;font-weight:500;padding:8px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);margin-bottom:6px">${subj}</div>`;
-  if (body) {
-    html+=`<div class="sec-title">邮件正文</div><div class="rbody" style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px">${body}</div>`;
-    html+=`<button class="btn btn-sm" onclick="copyTxt(this,${JSON.stringify(body)})" style="margin-bottom:8px">复制正文</button>`;
-  }
-  if (tip) html+=`<div class="sec-title">发送建议</div><div class="rbody">${tip}</div>`;
-  container.innerHTML=html||`<div class="rbody">${text}</div>`;
-}
-
 function copyTxt(btn, text) {
   navigator.clipboard.writeText(text).then(() => {
     const o=btn.textContent; btn.textContent='已复制';
@@ -545,21 +524,28 @@ function copyTxt(btn, text) {
 function renderTracker() {
   const body=document.getElementById('tracker-body');
   const total=trackerData.length;
+  const visibleData=trackerData.filter(d => {
+    const appliedOk=trackerFilters.applied==='all' || String(!!d.applied)===trackerFilters.applied;
+    const feedbackOk=trackerFilters.feedback==='all' || d.feedback===trackerFilters.feedback;
+    return appliedOk && feedbackOk;
+  });
   const applied=trackerData.filter(d=>d.applied).length;
   const fb=trackerData.filter(d=>d.feedback!=='待定'&&d.feedback!=='').length;
   document.getElementById('st-total').textContent=total;
   document.getElementById('st-applied').textContent=applied;
   document.getElementById('st-fb').textContent=fb;
   document.getElementById('st-rate').textContent=applied?Math.round(fb/applied*100)+'%':'—';
-  document.getElementById('tracker-info').textContent=total?`共 ${total} 条记录`:'';
-  if (!total) { body.innerHTML=''; document.getElementById('tracker-empty').style.display='block'; return; }
+  document.getElementById('tracker-info').textContent=total?`共 ${total} 条记录，当前显示 ${visibleData.length} 条`:'';
+  if (!total) { body.innerHTML=''; document.getElementById('tracker-empty').textContent='暂无记录，分析职位后点击"添加到投递追踪"'; document.getElementById('tracker-empty').style.display='block'; return; }
+  if (!visibleData.length) { body.innerHTML=''; document.getElementById('tracker-empty').style.display='block'; document.getElementById('tracker-empty').textContent='没有符合筛选条件的记录'; return; }
   document.getElementById('tracker-empty').style.display='none';
-  body.innerHTML=trackerData.map((d,i) => {
+  document.getElementById('tracker-empty').textContent='暂无记录，分析职位后点击"添加到投递追踪"';
+  body.innerHTML=visibleData.map((d,i) => {
     const sc=d.score>=70?'var(--green-text)':d.score>=50?'var(--amber-text)':'var(--red-text)';
     const sbg=d.score>=70?'var(--green-bg)':d.score>=50?'var(--amber-bg)':'var(--red-bg)';
     const vb=d.verdict==='投递'?'bg-green':d.verdict==='谨慎投递'?'bg-amber':'bg-red';
     return `<tr>
-      <td style="color:var(--text2);font-size:12px">${total-i}</td>
+      <td style="color:var(--text2);font-size:12px">${visibleData.length-i}</td>
       <td style="font-weight:500">${d.company}</td>
       <td>${d.role}</td>
       <td><span class="badge bg-gray">${d.orient}</span></td>
@@ -592,6 +578,12 @@ function renderTracker() {
   }).join('');
 }
 
+function setTrackerFilter(type, value, btn) {
+  trackerFilters[type]=value;
+  document.querySelectorAll(`.filter-btn[data-filter-type="${type}"]`).forEach(el=>el.classList.toggle('active', el===btn));
+  renderTracker();
+}
+
 function updateField(id, field, value) {
   const e=trackerData.find(d=>d.id===id);
   if (e) { e[field]=value; saveTracker(); }
@@ -600,6 +592,7 @@ function updateField(id, field, value) {
   document.getElementById('st-applied').textContent=applied;
   document.getElementById('st-fb').textContent=fb;
   document.getElementById('st-rate').textContent=applied?Math.round(fb/applied*100)+'%':'—';
+  if (field==='applied' || field==='feedback') renderTracker();
 }
 
 function deleteEntry(id) {
