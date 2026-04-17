@@ -32,9 +32,11 @@
   }
   body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif; background: var(--bg3); color: var(--text); min-height: 100vh; }
   .app { max-width: 1400px; margin: 0 auto; padding: 2rem 1rem; }
-  .hdr { margin-bottom: 1.5rem; }
+  .hdr { margin-bottom: 1.5rem; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
   .hdr h1 { font-size: 22px; font-weight: 600; color: var(--text); }
   .hdr p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .lang-toggle { flex-shrink: 0; padding: 6px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 12px; font-family: inherit; cursor: pointer; }
+  .lang-toggle:hover { background: var(--bg2); }
   .top-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; }
   .resume-bar { flex: 1; min-width: 260px; display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg); border-radius: var(--radius); border: 0.5px solid var(--border); cursor: pointer; transition: background 0.15s; }
   .resume-bar:hover { background: var(--bg2); }
@@ -159,91 +161,95 @@
   .modal-meta dt { color: var(--text2); }
   .modal-meta dd { color: var(--text); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1rem; }
+  .footer-credit { font-size: 12px; color: var(--text2); text-align: center; padding: 2rem 0 1rem; }
 </style>
 </head>
 <body>
 <div class="app">
   <div class="hdr">
-    <h1>comeoffercome</h1>
-    <p>职位分析 · 简历优化 · 面试准备 · 投递追踪</p>
+    <div>
+      <h1>comeoffercome</h1>
+      <p data-i18n="职位分析 · 简历优化 · 面试准备 · 投递追踪">职位分析 · 简历优化 · 面试准备 · 投递追踪</p>
+    </div>
+    <button class="lang-toggle" onclick="toggleLanguage()">中 / EN</button>
   </div>
 
   <div class="top-bar">
     <div class="resume-bar" id="resume-bar" onclick="triggerUpload()" ondragover="dragOver(event)" ondragleave="dragLeave()" ondrop="dropResume(event)">
-      <span class="resume-lbl">简历</span>
-      <span class="resume-info" id="resume-info">未上传，点击或拖入文件（PDF / Word / TXT）</span>
-      <button class="btn btn-sm" id="resume-change-btn" style="display:none;flex-shrink:0" onclick="event.stopPropagation();triggerUpload()">更换</button>
+      <span class="resume-lbl" data-i18n="简历">简历</span>
+      <span class="resume-info" id="resume-info" data-i18n="未上传，点击或拖入文件（PDF / Word / TXT）">未上传，点击或拖入文件（PDF / Word / TXT）</span>
+      <button class="btn btn-sm" id="resume-change-btn" style="display:none;flex-shrink:0" onclick="event.stopPropagation();triggerUpload()" data-i18n="更换">更换</button>
       <input type="file" id="resume-file" accept=".pdf,.docx,.txt" style="display:none" onchange="handleResumeFile(event)">
     </div>
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('analyze')">职位分析</button>
-    <button class="tab" onclick="switchTab('resume')">简历优化</button>
-    <button class="tab" onclick="switchTab('interview')">面试准备</button>
-    <button class="tab" onclick="switchTab('tracker')">投递追踪 <span class="tab-badge" id="tracker-badge">0</span></button>
+    <button class="tab active" onclick="switchTab('analyze')" data-i18n="职位分析">职位分析</button>
+    <button class="tab" onclick="switchTab('resume')" data-i18n="简历优化">简历优化</button>
+    <button class="tab" onclick="switchTab('interview')" data-i18n="面试准备">面试准备</button>
+    <button class="tab" onclick="switchTab('tracker')"><span data-i18n="投递追踪">投递追踪</span> <span class="tab-badge" id="tracker-badge">0</span></button>
   </div>
 
   <!-- 职位分析 -->
   <div id="panel-analyze" class="panel active">
     <div class="mode-switch">
-      <button class="mode-btn active" id="mode-single-btn" onclick="switchAnalysisMode('single')">单个分析</button>
-      <button class="mode-btn" id="mode-batch-btn" onclick="switchAnalysisMode('batch')">批量分析</button>
+      <button class="mode-btn active" id="mode-single-btn" onclick="switchAnalysisMode('single')" data-i18n="单个分析">单个分析</button>
+      <button class="mode-btn" id="mode-batch-btn" onclick="switchAnalysisMode('batch')" data-i18n="批量分析">批量分析</button>
     </div>
     <div id="single-analyze-box">
       <div style="display:flex;gap:10px;margin-bottom:0.75rem;flex-wrap:wrap">
         <div style="flex:1;min-width:200px">
-          <span class="field-label">职位链接（可选）</span>
-          <input type="text" class="std" id="jd-url" placeholder="粘贴职位页面 URL...">
+          <span class="field-label" data-i18n="职位链接（可选）">职位链接（可选）</span>
+          <input type="text" class="std" id="jd-url" placeholder="粘贴职位页面 URL..." data-placeholder="粘贴职位页面 URL...">
         </div>
       </div>
-      <span class="field-label">职位描述（JD）</span>
-      <textarea id="jd-a" rows="13" placeholder="粘贴 JD，AI 会自动提取公司名、职位名及岗位偏向..."></textarea>
+      <span class="field-label" data-i18n="职位描述（JD）">职位描述（JD）</span>
+      <textarea id="jd-a" rows="13" placeholder="粘贴 JD，AI 会自动提取公司名、职位名及岗位偏向..." data-placeholder="粘贴 JD，AI 会自动提取公司名、职位名及岗位偏向..."></textarea>
       <div class="actions">
-        <button class="btn btn-primary" onclick="analyzeJob()" id="btn-analyze"><span id="ico-analyze">分析匹配度</span></button>
+        <button class="btn btn-primary" onclick="analyzeJob()" id="btn-analyze"><span id="ico-analyze" data-i18n="分析匹配度">分析匹配度</span></button>
       </div>
     </div>
     <div id="batch-analyze-box" style="display:none">
-      <span class="field-label">批量职位描述（JD）</span>
-      <textarea id="jd-batch" rows="16" placeholder="粘贴多个 JD，每个 JD 之间用 --- 分隔"></textarea>
+      <span class="field-label" data-i18n="批量职位描述（JD）">批量职位描述（JD）</span>
+      <textarea id="jd-batch" rows="16" placeholder="粘贴多个 JD，每个 JD 之间用 --- 分隔" data-placeholder="粘贴多个 JD，每个 JD 之间用 --- 分隔"></textarea>
       <div class="actions">
-        <button class="btn btn-primary" onclick="batchAnalyzeJobs()" id="btn-batch"><span id="ico-batch">开始批量分析</span></button>
+        <button class="btn btn-primary" onclick="batchAnalyzeJobs()" id="btn-batch"><span id="ico-batch" data-i18n="开始批量分析">开始批量分析</span></button>
       </div>
       <div class="batch-progress" id="batch-progress"></div>
     </div>
     <div id="result-analyze" style="display:none">
       <div class="rcard" id="content-analyze"></div>
       <div class="actions" style="margin-top:8px">
-        <button class="btn" id="btn-add-tracker" onclick="addToTracker()" style="display:none">+ 添加到投递追踪</button>
+        <button class="btn" id="btn-add-tracker" onclick="addToTracker()" style="display:none">+ <span data-i18n="添加到投递追踪">添加到投递追踪</span></button>
       </div>
     </div>
   </div>
 
   <!-- 简历优化 -->
   <div id="panel-resume" class="panel">
-    <span class="field-label">目标 JD</span>
-    <textarea id="jd-r" rows="12" placeholder="粘贴目标岗位 JD..."></textarea>
+    <span class="field-label" data-i18n="目标 JD">目标 JD</span>
+    <textarea id="jd-r" rows="12" placeholder="粘贴目标岗位 JD..." data-placeholder="粘贴目标岗位 JD..."></textarea>
     <div style="margin-top:0.75rem">
-      <span class="field-label">优化侧重</span>
+      <span class="field-label" data-i18n="优化侧重">优化侧重</span>
       <div class="opts-row">
-        <label><input type="checkbox" id="opt-kw" checked> 关键词匹配</label>
-        <label><input type="checkbox" id="opt-qt"> 量化成果</label>
-        <label><input type="checkbox" id="opt-st"> 结构优化</label>
-        <label><input type="checkbox" id="opt-tn"> 措辞润色</label>
+        <label><input type="checkbox" id="opt-kw" checked> <span data-i18n="关键词匹配">关键词匹配</span></label>
+        <label><input type="checkbox" id="opt-qt"> <span data-i18n="量化成果">量化成果</span></label>
+        <label><input type="checkbox" id="opt-st"> <span data-i18n="结构优化">结构优化</span></label>
+        <label><input type="checkbox" id="opt-tn"> <span data-i18n="措辞润色">措辞润色</span></label>
       </div>
     </div>
     <div class="actions">
-      <button class="btn btn-primary" onclick="optimizeResume()" id="btn-resume"><span id="ico-resume">优化简历</span></button>
+      <button class="btn btn-primary" onclick="optimizeResume()" id="btn-resume"><span id="ico-resume" data-i18n="优化简历">优化简历</span></button>
     </div>
     <div id="result-resume" style="display:none"><div class="rcard" id="content-resume"></div></div>
   </div>
 
   <!-- 面试准备 -->
   <div id="panel-interview" class="panel">
-    <span class="field-label">目标 JD</span>
-    <textarea id="jd-i" rows="12" placeholder="粘贴 JD..."></textarea>
+    <span class="field-label" data-i18n="目标 JD">目标 JD</span>
+    <textarea id="jd-i" rows="12" placeholder="粘贴 JD..." data-placeholder="粘贴 JD..."></textarea>
     <div class="actions">
-      <button class="btn btn-primary" onclick="genInterview()" id="btn-interview"><span id="ico-interview">生成面试题</span></button>
+      <button class="btn btn-primary" onclick="genInterview()" id="btn-interview"><span id="ico-interview" data-i18n="生成面试题">生成面试题</span></button>
     </div>
     <div id="result-interview" style="display:none"><div class="rcard" id="content-interview"></div></div>
   </div>
@@ -251,67 +257,60 @@
   <!-- 投递追踪 -->
   <div id="panel-tracker" class="panel">
     <div class="stat-row">
-      <div class="stat-box stat-blue"><div class="stat-num" id="st-total">0</div><div class="stat-lbl">已分析</div></div>
-      <div class="stat-box stat-purple"><div class="stat-num" id="st-applied">0</div><div class="stat-lbl">已投递</div></div>
-      <div class="stat-box stat-green"><div class="stat-num" id="st-fb">0</div><div class="stat-lbl">收到反馈</div></div>
-      <div class="stat-box stat-orange"><div class="stat-num" id="st-rate">—</div><div class="stat-lbl">反馈率</div></div>
+      <div class="stat-box stat-blue"><div class="stat-num" id="st-total">0</div><div class="stat-lbl" data-i18n="已分析">已分析</div></div>
+      <div class="stat-box stat-purple"><div class="stat-num" id="st-applied">0</div><div class="stat-lbl" data-i18n="已投递">已投递</div></div>
+      <div class="stat-box stat-green"><div class="stat-num" id="st-fb">0</div><div class="stat-lbl" data-i18n="收到反馈">收到反馈</div></div>
+      <div class="stat-box stat-orange"><div class="stat-num" id="st-rate">—</div><div class="stat-lbl" data-i18n="反馈率">反馈率</div></div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px">
       <span style="font-size:13px;color:var(--text2)" id="tracker-info"></span>
-      <button class="btn btn-sm" onclick="exportCSV()">导出 CSV</button>
+      <button class="btn btn-sm" onclick="exportCSV()" data-i18n="导出 CSV">导出 CSV</button>
     </div>
     <div class="filter-bar">
       <div class="filter-group" id="applied-filter">
-        <span class="filter-lbl">投递状态</span>
-        <button class="filter-btn active" data-filter-type="applied" data-filter-value="all" onclick="setTrackerFilter('applied','all',this)">全部</button>
-        <button class="filter-btn" data-filter-type="applied" data-filter-value="false" onclick="setTrackerFilter('applied','false',this)">未投递</button>
-        <button class="filter-btn" data-filter-type="applied" data-filter-value="true" onclick="setTrackerFilter('applied','true',this)">已投递</button>
+        <span class="filter-lbl" data-i18n="投递状态">投递状态</span>
+        <button class="filter-btn active" data-filter-type="applied" data-filter-value="all" onclick="setTrackerFilter('applied','all',this)" data-i18n="全部">全部</button>
+        <button class="filter-btn" data-filter-type="applied" data-filter-value="false" onclick="setTrackerFilter('applied','false',this)" data-i18n="未投递">未投递</button>
+        <button class="filter-btn" data-filter-type="applied" data-filter-value="true" onclick="setTrackerFilter('applied','true',this)" data-i18n="已投递">已投递</button>
       </div>
       <div class="filter-group" id="feedback-filter">
-        <span class="filter-lbl">反馈状态</span>
-        <button class="filter-btn active" data-filter-type="feedback" data-filter-value="all" onclick="setTrackerFilter('feedback','all',this)">全部</button>
-        <button class="filter-btn" data-filter-type="feedback" data-filter-value="待定" onclick="setTrackerFilter('feedback','待定',this)">待定</button>
-        <button class="filter-btn" data-filter-type="feedback" data-filter-value="已面试" onclick="setTrackerFilter('feedback','已面试',this)">已面试</button>
-        <button class="filter-btn" data-filter-type="feedback" data-filter-value="已offer" onclick="setTrackerFilter('feedback','已offer',this)">已offer</button>
-        <button class="filter-btn" data-filter-type="feedback" data-filter-value="已拒绝" onclick="setTrackerFilter('feedback','已拒绝',this)">已拒绝</button>
+        <span class="filter-lbl" data-i18n="反馈状态">反馈状态</span>
+        <button class="filter-btn active" data-filter-type="feedback" data-filter-value="all" onclick="setTrackerFilter('feedback','all',this)" data-i18n="全部">全部</button>
+        <button class="filter-btn" data-filter-type="feedback" data-filter-value="待定" onclick="setTrackerFilter('feedback','待定',this)" data-i18n="待定">待定</button>
+        <button class="filter-btn" data-filter-type="feedback" data-filter-value="已面试" onclick="setTrackerFilter('feedback','已面试',this)" data-i18n="已面试">已面试</button>
+        <button class="filter-btn" data-filter-type="feedback" data-filter-value="已offer" onclick="setTrackerFilter('feedback','已offer',this)" data-i18n="已offer">已offer</button>
+        <button class="filter-btn" data-filter-type="feedback" data-filter-value="已拒绝" onclick="setTrackerFilter('feedback','已拒绝',this)" data-i18n="已拒绝">已拒绝</button>
       </div>
     </div>
     <div class="tbl-wrap">
       <table class="tracker">
         <thead><tr>
-          <th>#</th><th>公司</th><th>职位</th><th>类型</th><th>匹配分</th><th>结论</th>
-          <th>分析时间</th><th>职位链接</th><th>是否投递</th><th>投递时间</th><th>反馈状态</th><th>备注</th><th></th>
+          <th>#</th><th data-i18n="公司">公司</th><th data-i18n="职位">职位</th><th data-i18n="类型">类型</th><th data-i18n="匹配分">匹配分</th><th data-i18n="结论">结论</th>
+          <th data-i18n="分析时间">分析时间</th><th data-i18n="链接">链接</th><th data-i18n="投递">投递</th><th data-i18n="投递时间">投递时间</th><th data-i18n="反馈">反馈</th><th data-i18n="备注">备注</th><th></th>
         </tr></thead>
         <tbody id="tracker-body"></tbody>
       </table>
     </div>
-    <div id="tracker-empty" class="hint">暂无记录，分析职位后点击"添加到投递追踪"</div>
+    <div id="tracker-empty" class="hint" data-i18n="暂无记录，分析职位后点击添加到投递追踪">暂无记录，分析职位后点击"添加到投递追踪"</div>
   </div>
 
-  <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:0.5px solid var(--border)">
-    <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px">书签脚本</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:10px">在任意公司招聘页点击书签，自动提取 JD 并打开工具填入。</div>
-    <a id="bookmarklet-link" href="#" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;font-weight:500;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);text-decoration:none;cursor:grab">
-      ☆ 拖我到收藏栏
-    </a>
-    <div style="font-size:12px;color:var(--text3);margin-top:8px">将此按钮拖到浏览器收藏栏，之后在招聘页面点一下即可自动填入 JD</div>
-  </div>
+  <div class="footer-credit">by Scarlettxzjl0719</div>
 </div>
 
 <div id="tracker-modal" class="modal-layer" onclick="closeTrackerModal()">
   <div class="modal-card" onclick="event.stopPropagation()">
-    <div class="modal-title">添加到投递追踪</div>
+    <div class="modal-title" data-i18n="添加到投递追踪">添加到投递追踪</div>
     <dl class="modal-meta">
-      <dt>公司名</dt>
+      <dt data-i18n="公司名">公司名</dt>
       <dd id="modal-company">未知</dd>
-      <dt>职位名</dt>
+      <dt data-i18n="职位名">职位名</dt>
       <dd id="modal-role">未知</dd>
     </dl>
-    <span class="field-label">职位链接（URL）</span>
-    <input type="url" class="std" id="modal-job-url" placeholder="粘贴职位页面链接...">
+    <span class="field-label" data-i18n="职位链接（URL）">职位链接（URL）</span>
+    <input type="url" class="std" id="modal-job-url" placeholder="粘贴职位页面链接..." data-placeholder="粘贴职位页面链接...">
     <div class="modal-actions">
-      <button class="btn" onclick="closeTrackerModal()">取消</button>
-      <button class="btn btn-primary" onclick="confirmAddToTracker()">确认添加</button>
+      <button class="btn" onclick="closeTrackerModal()" data-i18n="取消">取消</button>
+      <button class="btn btn-primary" onclick="confirmAddToTracker()" data-i18n="确认添加">确认添加</button>
     </div>
   </div>
 </div>
@@ -321,12 +320,139 @@ const TRACKER_KEY='job_tracker_v1', RESUME_KEY='job_resume_v1', RESUME_NAME_KEY=
 let resumeText='', lastAnalysis=null, trackerData=[];
 const trackerFilters={applied:'all', feedback:'all'};
 const trackerDetailsOpen={};
+let currentLang='zh';
+const EN={
+  '职位分析 · 简历优化 · 面试准备 · 投递追踪':'Job Analysis · Resume Optimizer · Interview Prep · Tracker',
+  '简历':'Resume',
+  '未上传，点击或拖入文件（PDF / Word / TXT）':'Not uploaded. Click or drop a file (PDF / Word / TXT)',
+  '更换':'Change',
+  '职位分析':'Job Analysis',
+  '简历优化':'Resume Optimizer',
+  '面试准备':'Interview Prep',
+  '投递追踪':'Tracker',
+  '单个分析':'Single',
+  '批量分析':'Batch',
+  '职位链接（可选）':'Job Link (optional)',
+  '粘贴职位页面 URL...':'Paste job page URL...',
+  '职位描述（JD）':'Job Description (JD)',
+  '粘贴 JD，AI 会自动提取公司名、职位名及岗位偏向...':'Paste JD. AI will extract company, role, and role type...',
+  '分析匹配度':'Analyze Fit',
+  '批量职位描述（JD）':'Batch Job Descriptions (JD)',
+  '粘贴多个 JD，每个 JD 之间用 --- 分隔':'Paste multiple JDs separated by ---',
+  '开始批量分析':'Start Batch',
+  '添加到投递追踪':'Add to Tracker',
+  '目标 JD':'Target JD',
+  '粘贴目标岗位 JD...':'Paste target JD...',
+  '优化侧重':'Optimization Focus',
+  '关键词匹配':'Keywords',
+  '量化成果':'Quantify',
+  '结构优化':'Structure',
+  '措辞润色':'Tone',
+  '优化简历':'Optimize',
+  '粘贴 JD...':'Paste JD...',
+  '生成面试题':'Generate Questions',
+  '已分析':'Analyzed',
+  '已投递':'Applied',
+  '收到反馈':'Feedback',
+  '反馈率':'Response Rate',
+  '导出 CSV':'Export CSV',
+  '投递状态':'Application Status',
+  '反馈状态':'Status',
+  '全部':'All',
+  '未投递':'Not Applied',
+  '待定':'Pending',
+  '已查看':'Viewed',
+  '已笔试':'Assessment',
+  '已面试':'Interview',
+  '已offer':'Offer',
+  '已拒绝':'Rejected',
+  '已撤回':'Withdrawn',
+  '公司':'Company',
+  '职位':'Role',
+  '类型':'Type',
+  '匹配分':'Score',
+  '结论':'Verdict',
+  '分析时间':'Date',
+  '链接':'Link',
+  '投递':'Apply',
+  '投递时间':'Apply Date',
+  '反馈':'Status',
+  '备注':'Notes',
+  '暂无记录，分析职位后点击添加到投递追踪':'No records yet. Analyze a job and click "Add to Tracker".',
+  '添加到投递追踪':'Add to Tracker',
+  '公司名':'Company',
+  '职位名':'Role',
+  '职位链接（URL）':'Job Link (URL)',
+  '粘贴职位页面链接...':'Paste job page link...',
+  '取消':'Cancel',
+  '确认添加':'Confirm',
+  '投递':'Apply',
+  '谨慎投递':'Consider',
+  '不建议投递':'Skip',
+  '公司背景':'Company Background',
+  '岗位亮点':'Highlights',
+  '匹配优势':'Strengths',
+  '主要差距':'Gaps',
+  '投递建议':'Application Advice',
+  '详情':'Details',
+  '收起':'Collapse',
+  '暂无':'None',
+  '删除':'Delete',
+  '已复制':'Copied',
+  '复制简历':'Copy Resume',
+  '优化说明':'Optimization Notes',
+  '优化后简历':'Optimized Resume',
+  '修改亮点':'Key Changes',
+  '关键能力':'Key Skills',
+  '高频行为题':'Behavioral Questions',
+  '专业问题':'Role Questions',
+  '反问建议':'Questions to Ask',
+  'AI 分析中...':'AI is analyzing...',
+  'AI 优化中...':'AI is optimizing...',
+  'AI 生成中...':'AI is generating...',
+  '处理中...':'Processing...',
+  '重新分析':'Re-analyze',
+  '重新优化':'Re-optimize',
+  '重新生成':'Regenerate',
+  '请先上传简历':'Please upload your resume first',
+  '请填写 JD':'Please enter a JD',
+  '请粘贴至少一个 JD':'Please paste at least one JD',
+  '暂无数据':'No data',
+  '确认删除？':'Delete this record?',
+  '解析中...':'Parsing...',
+  '内容太少，请用 TXT 或 DOCX 格式':'Content is too short. Please use TXT or DOCX.',
+  '解析失败，请用 TXT 或 DOCX 格式':'Parsing failed. Please use TXT or DOCX.',
+  '简历已加载':'Resume loaded',
+  '请改用 TXT 或 DOCX 格式上传':'Please upload as TXT or DOCX.',
+  '销售型':'Sales',
+  '运营型':'Operations',
+  '产品型':'Product',
+  '客户成功型':'Customer Success',
+  '未知':'Unknown',
+  '已添加':'Added'
+};
 try { trackerData=JSON.parse(localStorage.getItem(TRACKER_KEY)||'[]'); } catch(e) {}
+
+function tr(key) { return currentLang==='en' ? (EN[key]||key) : key; }
+function tv(value) { return currentLang==='en' ? (EN[value]||value) : value; }
+function applyLanguage() {
+  document.querySelectorAll('[data-i18n],[data-dyn-i18n]').forEach(el => { el.textContent=tr(el.dataset.i18n||el.dataset.dynI18n); });
+  document.querySelectorAll('[data-placeholder]').forEach(el => { el.placeholder=tr(el.dataset.placeholder); });
+  if (lastAnalysis && document.getElementById('result-analyze').style.display!=='none') {
+    renderAnalysis(lastAnalysis.full, document.getElementById('content-analyze'));
+  }
+  renderTracker();
+}
+function toggleLanguage() {
+  currentLang=currentLang==='zh'?'en':'zh';
+  applyLanguage();
+}
 
 function init() {
   const r=localStorage.getItem(RESUME_KEY), n=localStorage.getItem(RESUME_NAME_KEY);
   if (r && r.length>10) { resumeText=r; setResumeLoaded(n||'简历已加载'); }
   updateBadge();
+  applyLanguage();
 }
 
 function triggerUpload() { document.getElementById('resume-file').click(); }
@@ -337,7 +463,7 @@ function handleResumeFile(e) { const f=e.target.files[0]; if(f) processResume(f)
 
 async function processResume(file) {
   const info=document.getElementById('resume-info');
-  info.className='resume-info'; info.textContent='解析中...';
+  info.className='resume-info'; info.textContent=tr('解析中...');
   try {
     let text='';
     if (file.name.endsWith('.txt')) text=await file.text();
@@ -357,6 +483,7 @@ async function processResume(file) {
 
 function setResumeLoaded(name) {
   const el=document.getElementById('resume-info');
+  el.removeAttribute('data-i18n');
   el.className='resume-info loaded'; el.textContent=name;
   document.getElementById('resume-change-btn').style.display='inline-flex';
   const bar=document.getElementById('resume-bar');
@@ -364,7 +491,8 @@ function setResumeLoaded(name) {
 }
 function setResumeError(msg) {
   const el=document.getElementById('resume-info');
-  el.className='resume-info'; el.style.color='var(--red-text)'; el.textContent=msg;
+  el.removeAttribute('data-i18n');
+  el.className='resume-info'; el.style.color='var(--red-text)'; el.textContent=tr(msg);
 }
 
 async function readPdf(file) {
@@ -376,7 +504,7 @@ async function readPdf(file) {
         const c=raw.charCodeAt(i);
         if ((c>=32&&c<=126)||(c>=0x4e00&&c<=0x9fff)||c===10) t+=raw[i];
       }
-      resolve(t.length>100 ? t : '请改用 TXT 或 DOCX 格式上传');
+      resolve(t.length>100 ? t : tr('请改用 TXT 或 DOCX 格式上传'));
     };
     r.readAsBinaryString(file);
   });
@@ -397,12 +525,14 @@ async function callAPI(system, user) {
 }
 
 function checkReady() {
-  if (!resumeText) { alert('请先上传简历'); return false; }
+  if (!resumeText) { alert(tr('请先上传简历')); return false; }
   return true;
 }
 function setLoading(b, i, on, label) {
   document.getElementById(b).disabled=on;
-  document.getElementById(i).innerHTML=on ? '<span class="spinner"></span> 处理中...' : label;
+  const el=document.getElementById(i);
+  if (!on && label && el.dataset.i18n) el.dataset.i18n=label;
+  el.innerHTML=on ? `<span class="spinner"></span> ${tr('处理中...')}` : tr(label);
 }
 function switchTab(t) {
   document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['analyze','resume','interview','tracker'][i]===t));
@@ -465,12 +595,12 @@ function getAnalyzePrompt() {
 async function analyzeJob() {
   if (!checkReady()) return;
   const jd=document.getElementById('jd-a').value.trim();
-  if (!jd) { alert('请填写 JD'); return; }
+  if (!jd) { alert(tr('请填写 JD')); return; }
   setLoading('btn-analyze','ico-analyze',true);
   document.getElementById('result-analyze').style.display='block';
   document.getElementById('btn-add-tracker').style.display='none';
   const content=document.getElementById('content-analyze');
-  content.innerHTML='<div class="hint">AI 分析中...</div>';
+  content.innerHTML=`<div class="hint">${tr('AI 分析中...')}</div>`;
   try {
     const result=await callAPI(getAnalyzePrompt(), `我的简历：\n${resumeText}\n\n目标JD：\n${jd}`);
     lastAnalysis={full:result, jd};
@@ -484,26 +614,26 @@ async function batchAnalyzeJobs() {
   if (!checkReady()) return;
   const raw=document.getElementById('jd-batch').value.trim();
   const jobs=raw.split(/\n?\s*---\s*\n?/).map(v=>v.trim()).filter(Boolean);
-  if (!jobs.length) { alert('请粘贴至少一个 JD'); return; }
+  if (!jobs.length) { alert(tr('请粘贴至少一个 JD')); return; }
   const progress=document.getElementById('batch-progress');
   progress.style.display='block';
   progress.innerHTML='';
   setLoading('btn-batch','ico-batch',true);
   let added=0;
   for (let i=0;i<jobs.length;i++) {
-    progress.innerHTML+=`正在分析第 ${i+1} / ${jobs.length} 个...\n`;
+    progress.innerHTML+=currentLang==='en' ? `Analyzing ${i+1} / ${jobs.length}...\n` : `正在分析第 ${i+1} / ${jobs.length} 个...\n`;
     try {
       const result=await callAPI(getAnalyzePrompt(), `我的简历：\n${resumeText}\n\n目标JD：\n${jobs[i]}`);
       const info=parseAnalysisSummary(result);
       trackerData.unshift(createTrackerEntry(info, ''));
       saveTracker(); updateBadge();
       added++;
-      progress.innerHTML+=`第 ${i+1} 个已添加：${escapeHtml(info.company)} · ${escapeHtml(info.role)}\n`;
+      progress.innerHTML+=currentLang==='en' ? `Item ${i+1} added: ${escapeHtml(info.company)} · ${escapeHtml(info.role)}\n` : `第 ${i+1} 个已添加：${escapeHtml(info.company)} · ${escapeHtml(info.role)}\n`;
     } catch(e) {
-      progress.innerHTML+=`<span class="batch-error">第 ${i+1} 个分析失败：${escapeHtml(e.message)}</span>\n`;
+      progress.innerHTML+=currentLang==='en' ? `<span class="batch-error">Item ${i+1} failed: ${escapeHtml(e.message)}</span>\n` : `<span class="batch-error">第 ${i+1} 个分析失败：${escapeHtml(e.message)}</span>\n`;
     }
   }
-  progress.innerHTML+=`批量分析完成，共添加 ${added} 条记录`;
+  progress.innerHTML+=currentLang==='en' ? `Batch complete. Added ${added} records.` : `批量分析完成，共添加 ${added} 条记录`;
   setLoading('btn-batch','ico-batch',false,'开始批量分析');
 }
 
@@ -519,13 +649,13 @@ function renderAnalysis(text, container) {
   if (score) {
     html+=`<div class="score-row">
       <div class="score-circ" style="background:${sbg};color:${sc}">
-        <span class="score-num">${score}</span><span class="score-lbl">匹配分</span>
+        <span class="score-num">${score}</span><span class="score-lbl">${tr('匹配分')}</span>
       </div>
       <div>
         <div style="font-size:14px;font-weight:500;margin-bottom:6px">${company} · ${role}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-          <span class="badge ${vb}">${verdict}</span>
-          <span class="badge bg-gray">${orient}</span>
+          <span class="badge ${vb}">${tv(verdict)}</span>
+          <span class="badge bg-gray">${tv(orient)}</span>
         </div>
         <div style="font-size:13px;color:var(--text2)">${reason}</div>
         <div class="progress"><div class="progress-bar" style="width:${score}%;background:${sc}"></div></div>
@@ -534,11 +664,11 @@ function renderAnalysis(text, container) {
   }
   for (const [k,l] of [['公司背景','公司背景'],['岗位亮点','岗位亮点']]) {
     const m=text.match(new RegExp(`【${k}】([\\s\\S]*?)(?=【|$)`));
-    if (m) html+=`<div class="sec-title">${l}</div><div class="rbody">${m[1].trim()}</div>`;
+    if (m) html+=`<div class="sec-title" data-dyn-i18n="${l}">${tr(l)}</div><div class="rbody">${m[1].trim()}</div>`;
   }
   for (const [k,l] of [['匹配优势','匹配优势'],['主要差距','主要差距'],['投递建议','投递建议']]) {
     const m=text.match(new RegExp(`【${k}】([\\s\\S]*?)(?=【|$)`));
-    if (m) html+=`<div class="sec-title">${l}</div><div class="rbody">${m[1].trim()}</div>`;
+    if (m) html+=`<div class="sec-title" data-dyn-i18n="${l}">${tr(l)}</div><div class="rbody">${m[1].trim()}</div>`;
   }
   container.innerHTML=html||`<div class="rbody">${text}</div>`;
 }
@@ -548,8 +678,8 @@ function addToTracker() {
   const info=getAnalysisSummary();
   const manualUrl=document.getElementById('jd-url').value.trim();
   const extractedUrl=lastAnalysis.jd.match(/https?:\/\/[^\s]+/)?.[0]||'';
-  document.getElementById('modal-company').textContent=info.company;
-  document.getElementById('modal-role').textContent=info.role;
+  document.getElementById('modal-company').textContent=tv(info.company);
+  document.getElementById('modal-role').textContent=tv(info.role);
   document.getElementById('modal-job-url').value=manualUrl||extractedUrl;
   const modal=document.getElementById('tracker-modal');
   modal.classList.add('open');
@@ -611,7 +741,7 @@ function confirmAddToTracker() {
 async function optimizeResume() {
   if (!checkReady()) return;
   const jd=document.getElementById('jd-r').value.trim();
-  if (!jd) { alert('请填写 JD'); return; }
+  if (!jd) { alert(tr('请填写 JD')); return; }
   const opts=[];
   if (document.getElementById('opt-kw').checked) opts.push('关键词匹配');
   if (document.getElementById('opt-qt').checked) opts.push('量化成果');
@@ -620,7 +750,7 @@ async function optimizeResume() {
   setLoading('btn-resume','ico-resume',true);
   document.getElementById('result-resume').style.display='block';
   const content=document.getElementById('content-resume');
-  content.innerHTML='<div class="hint">AI 优化中...</div>';
+  content.innerHTML=`<div class="hint">${tr('AI 优化中...')}</div>`;
   const sys=`你是资深简历顾问，优化侧重：${opts.join('、')||'综合'}。格式：\n【优化说明】\n（3条以内）\n\n【优化后简历】\n（完整简历）\n\n【修改亮点】\n（3-5处关键改动）`;
   try {
     const result=await callAPI(sys, `简历：\n${resumeText}\n\nJD：\n${jd}`);
@@ -632,11 +762,11 @@ async function optimizeResume() {
 async function genInterview() {
   if (!checkReady()) return;
   const jd=document.getElementById('jd-i').value.trim();
-  if (!jd) { alert('请填写 JD'); return; }
+  if (!jd) { alert(tr('请填写 JD')); return; }
   setLoading('btn-interview','ico-interview',true);
   document.getElementById('result-interview').style.display='block';
   const content=document.getElementById('content-interview');
-  content.innerHTML='<div class="hint">AI 生成中...</div>';
+  content.innerHTML=`<div class="hint">${tr('AI 生成中...')}</div>`;
   const sys=`你是面试教练，专注 AE/AM/PM 岗位。格式：
 
 【岗位关键能力】
@@ -671,10 +801,10 @@ function renderSections(text, container, sections, hasResumeCopy) {
   for (const [k,l] of sections) {
     const m=text.match(new RegExp(`【${k}】([\\s\\S]*?)(?=【|$)`));
     if (m) {
-      html+=`<div class="sec-title">${l}</div>`;
+      html+=`<div class="sec-title" data-dyn-i18n="${l}">${tr(l)}</div>`;
       if (k==='优化后简历' && hasResumeCopy) {
         html+=`<div class="rbody" style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px">${m[1].trim()}</div>`;
-        html+=`<button class="btn btn-sm" onclick="copyTxt(this,${JSON.stringify(m[1].trim())})">复制简历</button>`;
+        html+=`<button class="btn btn-sm" data-dyn-i18n="复制简历" onclick="copyTxt(this,${JSON.stringify(m[1].trim())})">${tr('复制简历')}</button>`;
       } else {
         html+=`<div class="rbody">${m[1].trim()}</div>`;
       }
@@ -685,7 +815,7 @@ function renderSections(text, container, sections, hasResumeCopy) {
 
 function copyTxt(btn, text) {
   navigator.clipboard.writeText(text).then(() => {
-    const o=btn.textContent; btn.textContent='已复制';
+    const o=btn.textContent; btn.textContent=tr('已复制');
     setTimeout(()=>btn.textContent=o, 2000);
   });
 }
@@ -704,11 +834,11 @@ function renderTracker() {
   document.getElementById('st-applied').textContent=applied;
   document.getElementById('st-fb').textContent=fb;
   document.getElementById('st-rate').textContent=applied?Math.round(fb/applied*100)+'%':'—';
-  document.getElementById('tracker-info').textContent=total?`共 ${total} 条记录，当前显示 ${visibleData.length} 条`:'';
-  if (!total) { body.innerHTML=''; document.getElementById('tracker-empty').textContent='暂无记录，分析职位后点击"添加到投递追踪"'; document.getElementById('tracker-empty').style.display='block'; return; }
-  if (!visibleData.length) { body.innerHTML=''; document.getElementById('tracker-empty').style.display='block'; document.getElementById('tracker-empty').textContent='没有符合筛选条件的记录'; return; }
+  document.getElementById('tracker-info').textContent=total?(currentLang==='en'?`${total} records, showing ${visibleData.length}`:`共 ${total} 条记录，当前显示 ${visibleData.length} 条`):'';
+  if (!total) { body.innerHTML=''; document.getElementById('tracker-empty').textContent=tr('暂无记录，分析职位后点击添加到投递追踪'); document.getElementById('tracker-empty').style.display='block'; return; }
+  if (!visibleData.length) { body.innerHTML=''; document.getElementById('tracker-empty').style.display='block'; document.getElementById('tracker-empty').textContent=currentLang==='en'?'No records match the current filters':'没有符合筛选条件的记录'; return; }
   document.getElementById('tracker-empty').style.display='none';
-  document.getElementById('tracker-empty').textContent='暂无记录，分析职位后点击"添加到投递追踪"';
+  document.getElementById('tracker-empty').textContent=tr('暂无记录，分析职位后点击添加到投递追踪');
   body.innerHTML=visibleData.map((d,i) => {
     const sc=d.score>=70?'var(--green-text)':d.score>=50?'var(--amber-text)':'var(--red-text)';
     const sbg=d.score>=70?'var(--green-bg)':d.score>=50?'var(--amber-bg)':'var(--red-bg)';
@@ -717,44 +847,48 @@ function renderTracker() {
     const detailOpen=!!trackerDetailsOpen[d.id];
     const detailHtml=detailOpen ? `<tr class="detail-row"><td colspan="13">
       <div class="detail-grid">
-        ${renderTrackerDetail('公司背景', d.companyBg)}
-        ${renderTrackerDetail('岗位亮点', d.highlights)}
-        ${renderTrackerDetail('匹配优势', d.pros)}
-        ${renderTrackerDetail('主要差距', d.cons)}
+        ${renderTrackerDetail(tr('公司背景'), d.companyBg)}
+        ${renderTrackerDetail(tr('岗位亮点'), d.highlights)}
+        ${renderTrackerDetail(tr('匹配优势'), d.pros)}
+        ${renderTrackerDetail(tr('主要差距'), d.cons)}
       </div>
     </td></tr>` : '';
     return `<tr>
       <td style="color:var(--text2);font-size:12px">${visibleData.length-i}</td>
       <td class="tracker-company">${d.company}</td>
       <td class="tracker-role">${d.role}</td>
-      <td><span class="badge bg-gray">${d.orient}</span></td>
+      <td><span class="badge bg-gray">${tv(d.orient)}</span></td>
       <td><span class="score-dot" style="background:${sbg};color:${sc}">${d.score}</span></td>
-      <td><span class="badge verdict-badge ${vb}">${d.verdict}</span></td>
+      <td><span class="badge verdict-badge ${vb}">${tv(d.verdict)}</span></td>
       <td class="tracker-date">${d.analyzedAt}</td>
       <td style="min-width:160px">
-        ${d.url ? `<a class="link-icon" href="${escapeHtml(d.url)}" target="_blank" title="${escapeHtml(d.url)}">🔗</a>` : `<input class="inline-url" type="text" placeholder="粘贴链接..." onchange="updateField(${d.id},'url',this.value)">`}
+        ${d.url ? `<a class="link-icon" href="${escapeHtml(d.url)}" target="_blank" title="${escapeHtml(d.url)}">🔗</a>` : `<input class="inline-url" type="text" placeholder="${tr('粘贴职位页面链接...')}" onchange="updateField(${d.id},'url',this.value)">`}
       </td>
-      <td><label class="toggle-switch" title="${d.applied?'已投递':'未投递'}">
+      <td><label class="toggle-switch" title="${d.applied?tr('已投递'):tr('未投递')}">
         <input type="checkbox" ${d.applied?'checked':''} onchange="updateField(${d.id},'applied',this.checked)">
         <span class="toggle-slider"></span>
       </label></td>
       <td><input class="inline-date" type="date" value="${d.appliedAt}" onchange="updateField(${d.id},'appliedAt',this.value)"></td>
       <td><select class="feedback-select ${fbClass}" onchange="updateField(${d.id},'feedback',this.value)">
-        <option value="待定" ${d.feedback==='待定'?'selected':''}>待定</option>
-        <option value="已查看" ${d.feedback==='已查看'?'selected':''}>已查看</option>
-        <option value="已笔试" ${d.feedback==='已笔试'?'selected':''}>已笔试</option>
-        <option value="已面试" ${d.feedback==='已面试'?'selected':''}>已面试</option>
-        <option value="已offer" ${d.feedback==='已offer'?'selected':''}>已offer</option>
-        <option value="已拒绝" ${d.feedback==='已拒绝'?'selected':''}>已拒绝</option>
-        <option value="已撤回" ${d.feedback==='已撤回'?'selected':''}>已撤回</option>
+        ${renderFeedbackOption('待定', d.feedback)}
+        ${renderFeedbackOption('已查看', d.feedback)}
+        ${renderFeedbackOption('已笔试', d.feedback)}
+        ${renderFeedbackOption('已面试', d.feedback)}
+        ${renderFeedbackOption('已offer', d.feedback)}
+        ${renderFeedbackOption('已拒绝', d.feedback)}
+        ${renderFeedbackOption('已撤回', d.feedback)}
       </select></td>
-      <td><input class="inline-note" type="text" value="${d.note}" placeholder="备注..." onchange="updateField(${d.id},'note',this.value)"></td>
+      <td><input class="inline-note" type="text" value="${escapeHtml(d.note)}" placeholder="${tr('备注')}" onchange="updateField(${d.id},'note',this.value)"></td>
       <td><div style="display:flex;gap:6px;align-items:center">
-        <button class="btn btn-sm" onclick="toggleTrackerDetails(${d.id})">${detailOpen?'收起':'详情'}</button>
-        <button class="delete-icon" onclick="deleteEntry(${d.id})" title="删除">×</button>
+        <button class="btn btn-sm" onclick="toggleTrackerDetails(${d.id})">${detailOpen?tr('收起'):tr('详情')}</button>
+        <button class="delete-icon" onclick="deleteEntry(${d.id})" title="${tr('删除')}">×</button>
       </div></td>
     </tr>${detailHtml}`;
   }).join('');
+}
+
+function renderFeedbackOption(value, current) {
+  return `<option value="${value}" ${current===value?'selected':''}>${tr(value)}</option>`;
 }
 
 function getFeedbackClass(feedback) {
@@ -770,7 +904,7 @@ function escapeHtml(value) {
 }
 
 function renderTrackerDetail(title, text) {
-  return `<div class="detail-box"><div class="detail-title">${title}</div><div class="detail-text">${escapeHtml(text)||'暂无'}</div></div>`;
+  return `<div class="detail-box"><div class="detail-title">${title}</div><div class="detail-text">${escapeHtml(text)||tr('暂无')}</div></div>`;
 }
 
 function toggleTrackerDetails(id) {
@@ -796,7 +930,7 @@ function updateField(id, field, value) {
 }
 
 function deleteEntry(id) {
-  if (!confirm('确认删除？')) return;
+  if (!confirm(tr('确认删除？'))) return;
   trackerData=trackerData.filter(d=>d.id!==id);
   saveTracker(); updateBadge(); renderTracker();
 }
@@ -805,7 +939,7 @@ function saveTracker() { try { localStorage.setItem(TRACKER_KEY, JSON.stringify(
 function updateBadge() { document.getElementById('tracker-badge').textContent=trackerData.length; }
 
 function exportCSV() {
-  if (!trackerData.length) { alert('暂无数据'); return; }
+  if (!trackerData.length) { alert(tr('暂无数据')); return; }
   const h=['公司','职位','岗位偏向','匹配分','结论','分析时间','职位链接','公司背景','岗位亮点','匹配优势','主要差距','是否投递','投递时间','反馈状态','备注'];
   const rows=trackerData.map(d=>[d.company,d.role,d.orient,d.score,d.verdict,d.analyzedAt,d.url||'',d.companyBg||'',d.highlights||'',d.pros||'',d.cons||'',d.applied?'是':'否',d.appliedAt,d.feedback,d.note].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
   const a=document.createElement('a');
@@ -814,44 +948,6 @@ function exportCSV() {
 }
 
 init();
-</script>
-<!-- bookmarklet helper -->
-<script>
-function getBookmarklet() {
-  const siteUrl = window.location.origin;
-  const code = `javascript:(function(){
-    var text = '';
-    var url = window.location.href;
-    var article = document.querySelector('article, main, [class*="job"], [class*="position"], [class*="description"], [id*="job"], [id*="description"]');
-    if(article){ text = article.innerText; }
-    else { text = document.body.innerText; }
-    text = text.substring(0, 8000).trim();
-    var target = '${siteUrl}';
-    var w = window.open(target, '_blank');
-    var tries = 0;
-    var iv = setInterval(function(){
-      tries++;
-      try {
-        var ta = w.document.getElementById('jd-a');
-        var urlInput = w.document.getElementById('jd-url');
-        if(ta){ ta.value = text; }
-        if(urlInput){ urlInput.value = url; }
-        if(ta || tries > 20){ clearInterval(iv); }
-      } catch(e){ if(tries>20) clearInterval(iv); }
-    }, 300);
-  })();`;
-  return code.replace(/\s+/g,' ');
-}
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const link = document.getElementById('bookmarklet-link');
-  if (link) {
-    link.addEventListener('mousedown', function() {
-      this.href = getBookmarklet();
-    });
-  }
-});
 </script>
 </body>
 </html>
