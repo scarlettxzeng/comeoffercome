@@ -109,9 +109,19 @@
   input.inline-url { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 9px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; width: 180px; }
   input[type=text].std { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 7px 10px; font-size: 13px; color: var(--text); background: var(--bg); font-family: inherit; }
   input[type=text].std:focus { outline: none; border-color: var(--border2); }
+  input[type=url].std { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 7px 10px; font-size: 13px; color: var(--text); background: var(--bg); font-family: inherit; }
+  input[type=url].std:focus { outline: none; border-color: var(--border2); }
   select.std { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 7px 10px; font-size: 13px; color: var(--text); background: var(--bg); font-family: inherit; }
   .two-opt { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; }
   .two-opt > div { flex: 1; min-width: 180px; }
+  .modal-layer { display: none; min-height: 100vh; padding: 2rem 1rem; background: rgba(0,0,0,0.32); align-items: center; justify-content: center; }
+  .modal-layer.open { display: flex; }
+  .modal-card { width: min(100%, 440px); background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: 0 18px 50px rgba(0,0,0,0.16); }
+  .modal-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 1rem; }
+  .modal-meta { display: grid; grid-template-columns: 72px 1fr; gap: 8px 12px; padding: 10px 12px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem; font-size: 13px; }
+  .modal-meta dt { color: var(--text2); }
+  .modal-meta dd { color: var(--text); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1rem; }
 </style>
 </head>
 <body>
@@ -234,6 +244,24 @@
       ☆ 拖我到收藏栏
     </a>
     <div style="font-size:12px;color:var(--text3);margin-top:8px">将此按钮拖到浏览器收藏栏，之后在招聘页面点一下即可自动填入 JD</div>
+  </div>
+</div>
+
+<div id="tracker-modal" class="modal-layer" onclick="closeTrackerModal()">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-title">添加到投递追踪</div>
+    <dl class="modal-meta">
+      <dt>公司名</dt>
+      <dd id="modal-company">未知</dd>
+      <dt>职位名</dt>
+      <dd id="modal-role">未知</dd>
+    </dl>
+    <span class="field-label">职位链接（URL）</span>
+    <input type="url" class="std" id="modal-job-url" placeholder="粘贴职位页面链接...">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeTrackerModal()">取消</button>
+      <button class="btn btn-primary" onclick="confirmAddToTracker()">确认添加</button>
+    </div>
   </div>
 </div>
 
@@ -420,23 +448,51 @@ function renderAnalysis(text, container) {
 
 function addToTracker() {
   if (!lastAnalysis) return;
-  const t=lastAnalysis.full;
-  const g=pat => { const m=t.match(pat); return m?m[1].trim():''; };
+  const info=getAnalysisSummary();
   const manualUrl=document.getElementById('jd-url').value.trim();
   const extractedUrl=lastAnalysis.jd.match(/https?:\/\/[^\s]+/)?.[0]||'';
-  trackerData.unshift({
-    id: Date.now(),
+  document.getElementById('modal-company').textContent=info.company;
+  document.getElementById('modal-role').textContent=info.role;
+  document.getElementById('modal-job-url').value=manualUrl||extractedUrl;
+  const modal=document.getElementById('tracker-modal');
+  modal.classList.add('open');
+  modal.scrollIntoView({block:'center'});
+  setTimeout(()=>document.getElementById('modal-job-url').focus(), 0);
+}
+
+function closeTrackerModal() {
+  document.getElementById('tracker-modal').classList.remove('open');
+}
+
+function getAnalysisSummary() {
+  const t=lastAnalysis.full;
+  const g=pat => { const m=t.match(pat); return m?m[1].trim():''; };
+  return {
     company: g(/【公司名】(.+)/)||'未知',
     role: g(/【职位名】(.+)/)||'未知',
     orient: g(/【岗位偏向】(.+)/)||'—',
     score: parseInt(g(/【总体评分】(\d+)/))||0,
-    verdict: g(/【推荐结论】(.+)/),
+    verdict: g(/【推荐结论】(.+)/)
+  };
+}
+
+function confirmAddToTracker() {
+  if (!lastAnalysis) return;
+  const info=getAnalysisSummary();
+  const url=document.getElementById('modal-job-url').value.trim();
+  trackerData.unshift({
+    id: Date.now(),
+    company: info.company,
+    role: info.role,
+    orient: info.orient,
+    score: info.score,
+    verdict: info.verdict,
     analyzedAt: new Date().toLocaleDateString('zh-CN'),
-    url: manualUrl||extractedUrl,
+    url,
     applied: false, appliedAt: '', feedback: '待定', note: ''
   });
   saveTracker(); updateBadge();
-  alert('已添加到投递追踪！');
+  closeTrackerModal();
 }
 
 async function optimizeResume() {
