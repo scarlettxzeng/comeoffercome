@@ -103,6 +103,12 @@
   table.tracker td { padding: 9px 10px; border-bottom: 0.5px solid var(--border); vertical-align: middle; color: var(--text); }
   table.tracker tr:last-child td { border-bottom: none; }
   table.tracker tr:hover td { background: var(--bg2); }
+  .detail-row td { background: var(--bg2); }
+  .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 10px; padding: 4px 0; }
+  @media (max-width: 700px) { .detail-grid { grid-template-columns: 1fr; } }
+  .detail-box { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
+  .detail-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+  .detail-text { font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
   select.inline { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 7px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; }
   input.inline-date { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 7px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; width: 130px; }
   input.inline-note { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 9px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; width: 200px; }
@@ -269,6 +275,7 @@
 const TRACKER_KEY='job_tracker_v1', RESUME_KEY='job_resume_v1', RESUME_NAME_KEY='job_resume_name_v1';
 let resumeText='', lastAnalysis=null, trackerData=[];
 const trackerFilters={applied:'all', feedback:'all'};
+const trackerDetailsOpen={};
 try { trackerData=JSON.parse(localStorage.getItem(TRACKER_KEY)||'[]'); } catch(e) {}
 
 function init() {
@@ -467,12 +474,17 @@ function closeTrackerModal() {
 function getAnalysisSummary() {
   const t=lastAnalysis.full;
   const g=pat => { const m=t.match(pat); return m?m[1].trim():''; };
+  const section=name => t.match(new RegExp(`【${name}】([\\s\\S]*?)(?=【|$)`))?.[1]?.trim()||'';
   return {
     company: g(/【公司名】(.+)/)||'未知',
     role: g(/【职位名】(.+)/)||'未知',
     orient: g(/【岗位偏向】(.+)/)||'—',
     score: parseInt(g(/【总体评分】(\d+)/))||0,
-    verdict: g(/【推荐结论】(.+)/)
+    verdict: g(/【推荐结论】(.+)/),
+    companyBg: section('公司背景'),
+    highlights: section('岗位亮点'),
+    pros: section('匹配优势'),
+    cons: section('主要差距')
   };
 }
 
@@ -489,6 +501,10 @@ function confirmAddToTracker() {
     verdict: info.verdict,
     analyzedAt: new Date().toLocaleDateString('zh-CN'),
     url,
+    companyBg: info.companyBg,
+    highlights: info.highlights,
+    pros: info.pros,
+    cons: info.cons,
     applied: false, appliedAt: '', feedback: '待定', note: ''
   });
   saveTracker(); updateBadge();
@@ -600,6 +616,15 @@ function renderTracker() {
     const sc=d.score>=70?'var(--green-text)':d.score>=50?'var(--amber-text)':'var(--red-text)';
     const sbg=d.score>=70?'var(--green-bg)':d.score>=50?'var(--amber-bg)':'var(--red-bg)';
     const vb=d.verdict==='投递'?'bg-green':d.verdict==='谨慎投递'?'bg-amber':'bg-red';
+    const detailOpen=!!trackerDetailsOpen[d.id];
+    const detailHtml=detailOpen ? `<tr class="detail-row"><td colspan="13">
+      <div class="detail-grid">
+        ${renderTrackerDetail('公司背景', d.companyBg)}
+        ${renderTrackerDetail('岗位亮点', d.highlights)}
+        ${renderTrackerDetail('匹配优势', d.pros)}
+        ${renderTrackerDetail('主要差距', d.cons)}
+      </div>
+    </td></tr>` : '';
     return `<tr>
       <td style="color:var(--text2);font-size:12px">${visibleData.length-i}</td>
       <td style="font-weight:500">${d.company}</td>
@@ -629,9 +654,25 @@ function renderTracker() {
         <option value="已撤回" ${d.feedback==='已撤回'?'selected':''}>已撤回</option>
       </select></td>
       <td><input class="inline-note" type="text" value="${d.note}" placeholder="备注..." onchange="updateField(${d.id},'note',this.value)"></td>
-      <td><button class="btn btn-sm btn-danger" onclick="deleteEntry(${d.id})">删除</button></td>
-    </tr>`;
+      <td><div style="display:flex;gap:6px;align-items:center">
+        <button class="btn btn-sm" onclick="toggleTrackerDetails(${d.id})">${detailOpen?'收起':'详情'}</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteEntry(${d.id})">删除</button>
+      </div></td>
+    </tr>${detailHtml}`;
   }).join('');
+}
+
+function escapeHtml(value) {
+  return String(value||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderTrackerDetail(title, text) {
+  return `<div class="detail-box"><div class="detail-title">${title}</div><div class="detail-text">${escapeHtml(text)||'暂无'}</div></div>`;
+}
+
+function toggleTrackerDetails(id) {
+  trackerDetailsOpen[id]=!trackerDetailsOpen[id];
+  renderTracker();
 }
 
 function setTrackerFilter(type, value, btn) {
@@ -662,8 +703,8 @@ function updateBadge() { document.getElementById('tracker-badge').textContent=tr
 
 function exportCSV() {
   if (!trackerData.length) { alert('暂无数据'); return; }
-  const h=['公司','职位','岗位偏向','匹配分','结论','分析时间','职位链接','是否投递','投递时间','反馈状态','备注'];
-  const rows=trackerData.map(d=>[d.company,d.role,d.orient,d.score,d.verdict,d.analyzedAt,d.url||'',d.applied?'是':'否',d.appliedAt,d.feedback,d.note].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  const h=['公司','职位','岗位偏向','匹配分','结论','分析时间','职位链接','公司背景','岗位亮点','匹配优势','主要差距','是否投递','投递时间','反馈状态','备注'];
+  const rows=trackerData.map(d=>[d.company,d.role,d.orient,d.score,d.verdict,d.analyzedAt,d.url||'',d.companyBg||'',d.highlights||'',d.pros||'',d.cons||'',d.applied?'是':'否',d.appliedAt,d.feedback,d.note].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['\uFEFF'+h.join(',')+'\n'+rows.join('\n')], {type:'text/csv;charset=utf-8'}));
   a.download='求职追踪.csv'; a.click();
