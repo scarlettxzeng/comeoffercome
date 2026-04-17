@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>求职助手</title>
+<title>comeoffercome</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -100,7 +100,8 @@
   table.tracker tr:hover td { background: var(--bg2); }
   select.inline { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 7px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; }
   input.inline-date { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 7px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; width: 130px; }
-  input.inline-note { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 9px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; width: 150px; }
+  input.inline-note { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 9px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; width: 200px; }
+  input.inline-url { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 9px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; width: 180px; }
   input[type=text].std { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 7px 10px; font-size: 13px; color: var(--text); background: var(--bg); font-family: inherit; }
   input[type=text].std:focus { outline: none; border-color: var(--border2); }
   select.std { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 7px 10px; font-size: 13px; color: var(--text); background: var(--bg); font-family: inherit; }
@@ -111,7 +112,7 @@
 <body>
 <div class="app">
   <div class="hdr">
-    <h1>求职助手</h1>
+    <h1>comeoffercome</h1>
     <p>职位分析 · 简历优化 · 面试准备 · 投递追踪</p>
   </div>
 
@@ -134,6 +135,12 @@
 
   <!-- 职位分析 -->
   <div id="panel-analyze" class="panel active">
+    <div style="display:flex;gap:10px;margin-bottom:0.75rem;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <span class="field-label">职位链接（可选）</span>
+        <input type="text" class="std" id="jd-url" placeholder="粘贴职位页面 URL...">
+      </div>
+    </div>
     <span class="field-label">职位描述（JD）</span>
     <textarea id="jd-a" rows="13" placeholder="粘贴 JD，AI 会自动提取公司名、职位名及岗位偏向..."></textarea>
     <div class="actions">
@@ -216,12 +223,21 @@
       <table class="tracker">
         <thead><tr>
           <th>#</th><th>公司</th><th>职位</th><th>类型</th><th>匹配分</th><th>结论</th>
-          <th>分析时间</th><th>是否投递</th><th>投递时间</th><th>反馈状态</th><th>备注</th><th></th>
+          <th>分析时间</th><th>职位链接</th><th>是否投递</th><th>投递时间</th><th>反馈状态</th><th>备注</th><th></th>
         </tr></thead>
         <tbody id="tracker-body"></tbody>
       </table>
     </div>
     <div id="tracker-empty" class="hint">暂无记录，分析职位后点击"添加到投递追踪"</div>
+  </div>
+
+  <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:0.5px solid var(--border)">
+    <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px">书签脚本</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:10px">在任意公司招聘页点击书签，自动提取 JD 并打开工具填入。</div>
+    <a id="bookmarklet-link" href="#" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-size:13px;font-weight:500;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);text-decoration:none;cursor:grab">
+      ☆ 拖我到收藏栏
+    </a>
+    <div style="font-size:12px;color:var(--text3);margin-top:8px">将此按钮拖到浏览器收藏栏，之后在招聘页面点一下即可自动填入 JD</div>
   </div>
 </div>
 
@@ -394,6 +410,8 @@ function addToTracker() {
   if (!lastAnalysis) return;
   const t=lastAnalysis.full;
   const g=pat => { const m=t.match(pat); return m?m[1].trim():''; };
+  const manualUrl=document.getElementById('jd-url').value.trim();
+  const extractedUrl=lastAnalysis.jd.match(/https?:\/\/[^\s]+/)?.[0]||'';
   trackerData.unshift({
     id: Date.now(),
     company: g(/【公司名】(.+)/)||'未知',
@@ -402,6 +420,7 @@ function addToTracker() {
     score: parseInt(g(/【总体评分】(\d+)/))||0,
     verdict: g(/【推荐结论】(.+)/),
     analyzedAt: new Date().toLocaleDateString('zh-CN'),
+    url: manualUrl||extractedUrl,
     applied: false, appliedAt: '', feedback: '待定', note: ''
   });
   saveTracker(); updateBadge();
@@ -547,6 +566,12 @@ function renderTracker() {
       <td><span style="background:${sbg};color:${sc};padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500">${d.score}</span></td>
       <td><span class="badge ${vb}">${d.verdict}</span></td>
       <td style="color:var(--text2);font-size:12px">${d.analyzedAt}</td>
+      <td style="min-width:160px">
+        ${d.url ? `<div style="display:flex;align-items:center;gap:4px">
+          <a href="${d.url}" target="_blank" style="font-size:12px;color:var(--blue-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;display:block" title="${d.url}">打开链接</a>
+          <button class="btn btn-sm" onclick="copyTxt(this,'${d.url.replace(/'/g,"\\'")}')">复制</button>
+        </div>` : `<input class="inline-url" type="text" placeholder="粘贴链接..." onchange="updateField(${d.id},'url',this.value)">`}
+      </td>
       <td><select class="inline" onchange="updateField(${d.id},'applied',this.value==='true')">
         <option value="false" ${!d.applied?'selected':''}>未投递</option>
         <option value="true" ${d.applied?'selected':''}>已投递</option>
@@ -588,14 +613,52 @@ function updateBadge() { document.getElementById('tracker-badge').textContent=tr
 
 function exportCSV() {
   if (!trackerData.length) { alert('暂无数据'); return; }
-  const h=['公司','职位','岗位偏向','匹配分','结论','分析时间','是否投递','投递时间','反馈状态','备注'];
-  const rows=trackerData.map(d=>[d.company,d.role,d.orient,d.score,d.verdict,d.analyzedAt,d.applied?'是':'否',d.appliedAt,d.feedback,d.note].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  const h=['公司','职位','岗位偏向','匹配分','结论','分析时间','职位链接','是否投递','投递时间','反馈状态','备注'];
+  const rows=trackerData.map(d=>[d.company,d.role,d.orient,d.score,d.verdict,d.analyzedAt,d.url||'',d.applied?'是':'否',d.appliedAt,d.feedback,d.note].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['\uFEFF'+h.join(',')+'\n'+rows.join('\n')], {type:'text/csv;charset=utf-8'}));
   a.download='求职追踪.csv'; a.click();
 }
 
 init();
+</script>
+<!-- bookmarklet helper -->
+<script>
+function getBookmarklet() {
+  const siteUrl = window.location.origin;
+  const code = `javascript:(function(){
+    var text = '';
+    var url = window.location.href;
+    var article = document.querySelector('article, main, [class*="job"], [class*="position"], [class*="description"], [id*="job"], [id*="description"]');
+    if(article){ text = article.innerText; }
+    else { text = document.body.innerText; }
+    text = text.substring(0, 8000).trim();
+    var target = '${siteUrl}';
+    var w = window.open(target, '_blank');
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries++;
+      try {
+        var ta = w.document.getElementById('jd-a');
+        var urlInput = w.document.getElementById('jd-url');
+        if(ta){ ta.value = text; }
+        if(urlInput){ urlInput.value = url; }
+        if(ta || tries > 20){ clearInterval(iv); }
+      } catch(e){ if(tries>20) clearInterval(iv); }
+    }, 300);
+  })();`;
+  return code.replace(/\s+/g,' ');
+}
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const link = document.getElementById('bookmarklet-link');
+  if (link) {
+    link.addEventListener('mousedown', function() {
+      this.href = getBookmarklet();
+    });
+  }
+});
 </script>
 </body>
 </html>
