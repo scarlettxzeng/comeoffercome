@@ -137,11 +137,16 @@
   .detail-box { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px 12px; }
   .detail-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
   .detail-text { font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
-  .mode-switch { display: inline-flex; gap: 4px; background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 4px; margin-bottom: 0.75rem; }
-  .mode-btn { border: none; border-radius: 6px; padding: 6px 12px; background: transparent; color: var(--text2); font-size: 13px; font-family: inherit; cursor: pointer; }
-  .mode-btn.active { background: var(--text); color: var(--bg); }
-  .batch-progress { display: none; margin-top: 0.75rem; padding: 10px 12px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); font-size: 13px; line-height: 1.7; color: var(--text2); white-space: pre-wrap; }
-  .batch-error { color: var(--red-text); }
+  .job-input-row { display: flex; gap: 16px; padding: 14px 0; border-bottom: 0.5px solid var(--border); align-items: flex-start; }
+  .job-input-left { width: 280px; flex-shrink: 0; }
+  .job-input-right { flex: 1; min-width: 0; }
+  .job-tag { display: inline-block; font-size: 11px; font-weight: 600; color: var(--text2); background: var(--bg2); border: 0.5px solid var(--border); border-radius: 20px; padding: 2px 8px; margin-bottom: 8px; }
+  .job-placeholder { height: 25px; margin-bottom: 8px; }
+  .job-delete { margin-top: 22px; width: 28px; height: 28px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 50%; background: transparent; color: var(--text3); font-size: 20px; cursor: pointer; }
+  .job-delete:hover { background: var(--red-bg); color: var(--red-text); }
+  .add-job-btn { width: 100%; justify-content: center; border-style: dashed; margin-top: 12px; }
+  .analysis-progress { display: none; margin-top: 0.75rem; padding: 10px 12px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); font-size: 13px; line-height: 1.7; color: var(--text2); white-space: pre-wrap; }
+  .analysis-error { color: var(--red-text); }
   select.inline { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 7px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; }
   input.inline-date { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 7px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; width: 130px; }
   input.inline-note { border: 0.5px solid var(--border); border-radius: var(--radius); padding: 3px 9px; font-size: 12px; background: var(--bg); color: var(--text); font-family: inherit; width: 100%; min-width: 160px; }
@@ -153,14 +158,6 @@
   select.std { width: 100%; border: 0.5px solid var(--border); border-radius: var(--radius); padding: 7px 10px; font-size: 13px; color: var(--text); background: var(--bg); font-family: inherit; }
   .two-opt { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; }
   .two-opt > div { flex: 1; min-width: 180px; }
-  .modal-layer { display: none; min-height: 100vh; padding: 2rem 1rem; background: rgba(0,0,0,0.32); align-items: center; justify-content: center; }
-  .modal-layer.open { display: flex; }
-  .modal-card { width: min(100%, 440px); background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; box-shadow: 0 18px 50px rgba(0,0,0,0.16); }
-  .modal-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 1rem; }
-  .modal-meta { display: grid; grid-template-columns: 72px 1fr; gap: 8px 12px; padding: 10px 12px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem; font-size: 13px; }
-  .modal-meta dt { color: var(--text2); }
-  .modal-meta dd { color: var(--text); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1rem; }
   .footer-credit { font-size: 12px; color: var(--text2); text-align: center; padding: 2rem 0 1rem; }
 </style>
 </head>
@@ -192,37 +189,12 @@
 
   <!-- 职位分析 -->
   <div id="panel-analyze" class="panel active">
-    <div class="mode-switch">
-      <button class="mode-btn active" id="mode-single-btn" onclick="switchAnalysisMode('single')" data-i18n="单个分析">单个分析</button>
-      <button class="mode-btn" id="mode-batch-btn" onclick="switchAnalysisMode('batch')" data-i18n="批量分析">批量分析</button>
+    <div id="job-input-list"></div>
+    <button class="btn add-job-btn" onclick="addJobInputRow()">+ <span data-i18n="添加职位">添加职位</span></button>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="analyzeJob()" id="btn-analyze"><span id="ico-analyze" data-i18n="分析匹配度">分析匹配度</span></button>
     </div>
-    <div id="single-analyze-box">
-      <div style="display:flex;gap:10px;margin-bottom:0.75rem;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px">
-          <span class="field-label" data-i18n="职位链接（可选）">职位链接（可选）</span>
-          <input type="text" class="std" id="jd-url" placeholder="粘贴职位页面 URL..." data-placeholder="粘贴职位页面 URL...">
-        </div>
-      </div>
-      <span class="field-label" data-i18n="职位描述（JD）">职位描述（JD）</span>
-      <textarea id="jd-a" rows="13" placeholder="粘贴 JD，AI 会自动提取公司名、职位名及岗位偏向..." data-placeholder="粘贴 JD，AI 会自动提取公司名、职位名及岗位偏向..."></textarea>
-      <div class="actions">
-        <button class="btn btn-primary" onclick="analyzeJob()" id="btn-analyze"><span id="ico-analyze" data-i18n="分析匹配度">分析匹配度</span></button>
-      </div>
-    </div>
-    <div id="batch-analyze-box" style="display:none">
-      <span class="field-label" data-i18n="批量职位描述（JD）">批量职位描述（JD）</span>
-      <textarea id="jd-batch" rows="16" placeholder="粘贴多个 JD，每个 JD 之间用 --- 分隔" data-placeholder="粘贴多个 JD，每个 JD 之间用 --- 分隔"></textarea>
-      <div class="actions">
-        <button class="btn btn-primary" onclick="batchAnalyzeJobs()" id="btn-batch"><span id="ico-batch" data-i18n="开始批量分析">开始批量分析</span></button>
-      </div>
-      <div class="batch-progress" id="batch-progress"></div>
-    </div>
-    <div id="result-analyze" style="display:none">
-      <div class="rcard" id="content-analyze"></div>
-      <div class="actions" style="margin-top:8px">
-        <button class="btn" id="btn-add-tracker" onclick="addToTracker()" style="display:none">+ <span data-i18n="添加到投递追踪">添加到投递追踪</span></button>
-      </div>
-    </div>
+    <div class="analysis-progress" id="analysis-progress"></div>
   </div>
 
   <!-- 简历优化 -->
@@ -291,33 +263,16 @@
         <tbody id="tracker-body"></tbody>
       </table>
     </div>
-    <div id="tracker-empty" class="hint" data-i18n="暂无记录，分析职位后点击添加到投递追踪">暂无记录，分析职位后点击"添加到投递追踪"</div>
+    <div id="tracker-empty" class="hint" data-i18n="暂无记录，请先分析职位">暂无记录，请先分析职位</div>
   </div>
 
   <div class="footer-credit">by Scarlettxzjl0719</div>
 </div>
 
-<div id="tracker-modal" class="modal-layer" onclick="closeTrackerModal()">
-  <div class="modal-card" onclick="event.stopPropagation()">
-    <div class="modal-title" data-i18n="添加到投递追踪">添加到投递追踪</div>
-    <dl class="modal-meta">
-      <dt data-i18n="公司名">公司名</dt>
-      <dd id="modal-company">未知</dd>
-      <dt data-i18n="职位名">职位名</dt>
-      <dd id="modal-role">未知</dd>
-    </dl>
-    <span class="field-label" data-i18n="职位链接（URL）">职位链接（URL）</span>
-    <input type="url" class="std" id="modal-job-url" placeholder="粘贴职位页面链接..." data-placeholder="粘贴职位页面链接...">
-    <div class="modal-actions">
-      <button class="btn" onclick="closeTrackerModal()" data-i18n="取消">取消</button>
-      <button class="btn btn-primary" onclick="confirmAddToTracker()" data-i18n="确认添加">确认添加</button>
-    </div>
-  </div>
-</div>
-
 <script>
 const TRACKER_KEY='job_tracker_v1', RESUME_KEY='job_resume_v1', RESUME_NAME_KEY='job_resume_name_v1';
-let resumeText='', lastAnalysis=null, trackerData=[];
+let resumeText='', trackerData=[];
+let jobInputRows=[{id: Date.now(), url:'', jd:''}];
 const trackerFilters={applied:'all', feedback:'all'};
 const trackerDetailsOpen={};
 let currentLang='zh';
@@ -330,17 +285,16 @@ const EN={
   '简历优化':'Resume Optimizer',
   '面试准备':'Interview Prep',
   '投递追踪':'Tracker',
-  '单个分析':'Single',
-  '批量分析':'Batch',
-  '职位链接（可选）':'Job Link (optional)',
-  '粘贴职位页面 URL...':'Paste job page URL...',
+  '职位链接':'Job Link',
+  'https://...':'https://...',
   '职位描述（JD）':'Job Description (JD)',
-  '粘贴 JD，AI 会自动提取公司名、职位名及岗位偏向...':'Paste JD. AI will extract company, role, and role type...',
+  '粘贴 JD...':'Paste JD...',
   '分析匹配度':'Analyze Fit',
-  '批量职位描述（JD）':'Batch Job Descriptions (JD)',
-  '粘贴多个 JD，每个 JD 之间用 --- 分隔':'Paste multiple JDs separated by ---',
-  '开始批量分析':'Start Batch',
-  '添加到投递追踪':'Add to Tracker',
+  '添加职位':'Add Job',
+  '职位':'Job',
+  '空白占位':'',
+  '请填写职位链接':'Please enter the job link',
+  '分析完成，共添加 X 条记录':'Analysis complete. Added X records.',
   '目标 JD':'Target JD',
   '粘贴目标岗位 JD...':'Paste target JD...',
   '优化侧重':'Optimization Focus',
@@ -378,8 +332,7 @@ const EN={
   '投递时间':'Apply Date',
   '反馈':'Status',
   '备注':'Notes',
-  '暂无记录，分析职位后点击添加到投递追踪':'No records yet. Analyze a job and click "Add to Tracker".',
-  '添加到投递追踪':'Add to Tracker',
+  '暂无记录，请先分析职位':'No records yet. Analyze a job first.',
   '公司名':'Company',
   '职位名':'Role',
   '职位链接（URL）':'Job Link (URL)',
@@ -416,7 +369,6 @@ const EN={
   '重新生成':'Regenerate',
   '请先上传简历':'Please upload your resume first',
   '请填写 JD':'Please enter a JD',
-  '请粘贴至少一个 JD':'Please paste at least one JD',
   '暂无数据':'No data',
   '确认删除？':'Delete this record?',
   '解析中...':'Parsing...',
@@ -438,9 +390,7 @@ function tv(value) { return currentLang==='en' ? (EN[value]||value) : value; }
 function applyLanguage() {
   document.querySelectorAll('[data-i18n],[data-dyn-i18n]').forEach(el => { el.textContent=tr(el.dataset.i18n||el.dataset.dynI18n); });
   document.querySelectorAll('[data-placeholder]').forEach(el => { el.placeholder=tr(el.dataset.placeholder); });
-  if (lastAnalysis && document.getElementById('result-analyze').style.display!=='none') {
-    renderAnalysis(lastAnalysis.full, document.getElementById('content-analyze'));
-  }
+  renderJobInputRows();
   renderTracker();
 }
 function toggleLanguage() {
@@ -452,6 +402,7 @@ function init() {
   const r=localStorage.getItem(RESUME_KEY), n=localStorage.getItem(RESUME_NAME_KEY);
   if (r && r.length>10) { resumeText=r; setResumeLoaded(n||'简历已加载'); }
   updateBadge();
+  renderJobInputRows();
   applyLanguage();
 }
 
@@ -539,22 +490,7 @@ function switchTab(t) {
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+t).classList.add('active');
   if (t==='tracker') renderTracker();
-  if (t==='interview' && !document.getElementById('jd-i').value) document.getElementById('jd-i').value=document.getElementById('jd-a').value||'';
-}
-
-function switchAnalysisMode(mode) {
-  const isBatch=mode==='batch';
-  const result=document.getElementById('result-analyze');
-  document.getElementById('single-analyze-box').style.display=isBatch?'none':'block';
-  document.getElementById('batch-analyze-box').style.display=isBatch?'block':'none';
-  document.getElementById('mode-single-btn').classList.toggle('active', !isBatch);
-  document.getElementById('mode-batch-btn').classList.toggle('active', isBatch);
-  if (isBatch) {
-    result.dataset.singleDisplay=result.style.display;
-    result.style.display='none';
-  } else {
-    result.style.display=result.dataset.singleDisplay||result.style.display;
-  }
+  if (t==='interview' && !document.getElementById('jd-i').value) document.getElementById('jd-i').value=getFirstJobDescription()||'';
 }
 
 function getAnalyzePrompt() {
@@ -592,49 +528,84 @@ function getAnalyzePrompt() {
 100字以内具体建议`;
 }
 
-async function analyzeJob() {
-  if (!checkReady()) return;
-  const jd=document.getElementById('jd-a').value.trim();
-  if (!jd) { alert(tr('请填写 JD')); return; }
-  setLoading('btn-analyze','ico-analyze',true);
-  document.getElementById('result-analyze').style.display='block';
-  document.getElementById('btn-add-tracker').style.display='none';
-  const content=document.getElementById('content-analyze');
-  content.innerHTML=`<div class="hint">${tr('AI 分析中...')}</div>`;
-  try {
-    const result=await callAPI(getAnalyzePrompt(), `我的简历：\n${resumeText}\n\n目标JD：\n${jd}`);
-    lastAnalysis={full:result, jd};
-    renderAnalysis(result, content);
-    document.getElementById('btn-add-tracker').style.display='inline-flex';
-  } catch(e) { content.innerHTML=`<div style="font-size:13px;color:var(--red-text)">请求失败：${e.message}</div>`; }
-  setLoading('btn-analyze','ico-analyze',false,'重新分析');
+function renderJobInputRows() {
+  const list=document.getElementById('job-input-list');
+  if (!list) return;
+  list.innerHTML=jobInputRows.map((row,index)=>`<div class="job-input-row" data-job-id="${row.id}">
+    <div class="job-input-left">
+      <span class="job-tag">${currentLang==='en'?'Job':'职位'} ${index+1}</span>
+      <span class="field-label">${tr('职位链接')}</span>
+      <input type="text" class="std job-url-input" value="${escapeHtml(row.url)}" placeholder="${tr('https://...')}" oninput="updateJobInputRow(${row.id},'url',this.value)">
+    </div>
+    <div class="job-input-right">
+      <div class="job-placeholder"></div>
+      <span class="field-label">${tr('职位描述（JD）')}</span>
+      <textarea class="job-jd-input" rows="4" placeholder="${tr('粘贴 JD...')}" oninput="updateJobInputRow(${row.id},'jd',this.value)">${escapeHtml(row.jd)}</textarea>
+    </div>
+    <button class="job-delete" onclick="removeJobInputRow(${row.id})" title="${tr('删除')}">×</button>
+  </div>`).join('');
 }
 
-async function batchAnalyzeJobs() {
+function updateJobInputRow(id, field, value) {
+  const row=jobInputRows.find(item=>item.id===id);
+  if (row) row[field]=value;
+}
+
+function syncJobInputRows() {
+  document.querySelectorAll('.job-input-row').forEach(el => {
+    const id=Number(el.dataset.jobId);
+    const row=jobInputRows.find(item=>item.id===id);
+    if (row) {
+      row.url=el.querySelector('.job-url-input')?.value||'';
+      row.jd=el.querySelector('.job-jd-input')?.value||'';
+    }
+  });
+}
+
+function addJobInputRow() {
+  syncJobInputRows();
+  jobInputRows.push({id: Date.now()+Math.floor(Math.random()*1000), url:'', jd:''});
+  renderJobInputRows();
+}
+
+function removeJobInputRow(id) {
+  syncJobInputRows();
+  jobInputRows=jobInputRows.filter(row=>row.id!==id);
+  if (!jobInputRows.length) jobInputRows.push({id: Date.now(), url:'', jd:''});
+  renderJobInputRows();
+}
+
+function getFirstJobDescription() {
+  syncJobInputRows();
+  return jobInputRows.find(row=>row.jd.trim())?.jd.trim()||'';
+}
+
+async function analyzeJob() {
   if (!checkReady()) return;
-  const raw=document.getElementById('jd-batch').value.trim();
-  const jobs=raw.split(/\n?\s*---\s*\n?/).map(v=>v.trim()).filter(Boolean);
-  if (!jobs.length) { alert(tr('请粘贴至少一个 JD')); return; }
-  const progress=document.getElementById('batch-progress');
+  syncJobInputRows();
+  const jobs=jobInputRows.map((row,index)=>({...row,index})).filter(row=>row.jd.trim());
+  if (!jobs.length) { alert(tr('请填写 JD')); return; }
+  if (jobs.some(row=>!row.url.trim())) { alert(tr('请填写职位链接')); return; }
+  const progress=document.getElementById('analysis-progress');
   progress.style.display='block';
   progress.innerHTML='';
-  setLoading('btn-batch','ico-batch',true);
+  setLoading('btn-analyze','ico-analyze',true);
   let added=0;
   for (let i=0;i<jobs.length;i++) {
     progress.innerHTML+=currentLang==='en' ? `Analyzing ${i+1} / ${jobs.length}...\n` : `正在分析第 ${i+1} / ${jobs.length} 个...\n`;
     try {
-      const result=await callAPI(getAnalyzePrompt(), `我的简历：\n${resumeText}\n\n目标JD：\n${jobs[i]}`);
+      const result=await callAPI(getAnalyzePrompt(), `我的简历：\n${resumeText}\n\n目标JD：\n${jobs[i].jd}`);
       const info=parseAnalysisSummary(result);
-      trackerData.unshift(createTrackerEntry(info, ''));
+      trackerData.unshift(createTrackerEntry(info, jobs[i].url.trim()));
       saveTracker(); updateBadge();
       added++;
-      progress.innerHTML+=currentLang==='en' ? `Item ${i+1} added: ${escapeHtml(info.company)} · ${escapeHtml(info.role)}\n` : `第 ${i+1} 个已添加：${escapeHtml(info.company)} · ${escapeHtml(info.role)}\n`;
     } catch(e) {
-      progress.innerHTML+=currentLang==='en' ? `<span class="batch-error">Item ${i+1} failed: ${escapeHtml(e.message)}</span>\n` : `<span class="batch-error">第 ${i+1} 个分析失败：${escapeHtml(e.message)}</span>\n`;
+      progress.innerHTML+=currentLang==='en' ? `<span class="analysis-error">Item ${i+1} failed: ${escapeHtml(e.message)}</span>\n` : `<span class="analysis-error">第 ${i+1} 个分析失败：${escapeHtml(e.message)}</span>\n`;
     }
   }
-  progress.innerHTML+=currentLang==='en' ? `Batch complete. Added ${added} records.` : `批量分析完成，共添加 ${added} 条记录`;
-  setLoading('btn-batch','ico-batch',false,'开始批量分析');
+  progress.innerHTML+=currentLang==='en' ? `Analysis complete. Added ${added} records.` : `分析完成，共添加 ${added} 条记录`;
+  setLoading('btn-analyze','ico-analyze',false,'分析匹配度');
+  switchTab('tracker');
 }
 
 function renderAnalysis(text, container) {
@@ -673,28 +644,6 @@ function renderAnalysis(text, container) {
   container.innerHTML=html||`<div class="rbody">${text}</div>`;
 }
 
-function addToTracker() {
-  if (!lastAnalysis) return;
-  const info=getAnalysisSummary();
-  const manualUrl=document.getElementById('jd-url').value.trim();
-  const extractedUrl=lastAnalysis.jd.match(/https?:\/\/[^\s]+/)?.[0]||'';
-  document.getElementById('modal-company').textContent=tv(info.company);
-  document.getElementById('modal-role').textContent=tv(info.role);
-  document.getElementById('modal-job-url').value=manualUrl||extractedUrl;
-  const modal=document.getElementById('tracker-modal');
-  modal.classList.add('open');
-  modal.scrollIntoView({block:'center'});
-  setTimeout(()=>document.getElementById('modal-job-url').focus(), 0);
-}
-
-function closeTrackerModal() {
-  document.getElementById('tracker-modal').classList.remove('open');
-}
-
-function getAnalysisSummary() {
-  return parseAnalysisSummary(lastAnalysis.full);
-}
-
 function parseAnalysisSummary(t) {
   const g=pat => { const m=t.match(pat); return m?m[1].trim():''; };
   const section=name => t.match(new RegExp(`【${name}】([\\s\\S]*?)(?=【|$)`))?.[1]?.trim()||'';
@@ -727,15 +676,6 @@ function createTrackerEntry(info, url) {
     cons: info.cons,
     applied: false, appliedAt: '', feedback: '待定', note: ''
   };
-}
-
-function confirmAddToTracker() {
-  if (!lastAnalysis) return;
-  const info=getAnalysisSummary();
-  const url=document.getElementById('modal-job-url').value.trim();
-  trackerData.unshift(createTrackerEntry(info, url));
-  saveTracker(); updateBadge();
-  closeTrackerModal();
 }
 
 async function optimizeResume() {
@@ -835,10 +775,10 @@ function renderTracker() {
   document.getElementById('st-fb').textContent=fb;
   document.getElementById('st-rate').textContent=applied?Math.round(fb/applied*100)+'%':'—';
   document.getElementById('tracker-info').textContent=total?(currentLang==='en'?`${total} records, showing ${visibleData.length}`:`共 ${total} 条记录，当前显示 ${visibleData.length} 条`):'';
-  if (!total) { body.innerHTML=''; document.getElementById('tracker-empty').textContent=tr('暂无记录，分析职位后点击添加到投递追踪'); document.getElementById('tracker-empty').style.display='block'; return; }
+  if (!total) { body.innerHTML=''; document.getElementById('tracker-empty').textContent=tr('暂无记录，请先分析职位'); document.getElementById('tracker-empty').style.display='block'; return; }
   if (!visibleData.length) { body.innerHTML=''; document.getElementById('tracker-empty').style.display='block'; document.getElementById('tracker-empty').textContent=currentLang==='en'?'No records match the current filters':'没有符合筛选条件的记录'; return; }
   document.getElementById('tracker-empty').style.display='none';
-  document.getElementById('tracker-empty').textContent=tr('暂无记录，分析职位后点击添加到投递追踪');
+  document.getElementById('tracker-empty').textContent=tr('暂无记录，请先分析职位');
   body.innerHTML=visibleData.map((d,i) => {
     const sc=d.score>=70?'var(--green-text)':d.score>=50?'var(--amber-text)':'var(--red-text)';
     const sbg=d.score>=70?'var(--green-bg)':d.score>=50?'var(--amber-bg)':'var(--red-bg)';
